@@ -15,34 +15,43 @@
 
 <header>
   <div class="header-content">
-    <p class="eyebrow">BIOFILM IMAGE ANALYSIS</p>
 
-    <h1>Yeast Attachment Lab</h1>
+    <p class="eyebrow">
+      BIOFILM IMAGE ANALYSIS
+    </p>
+
+    <h1>
+      Yeast Attachment Lab
+    </h1>
 
     <p>
       효모 표면 부착률 이미지 분석 · 실험 데이터 모델링 · 농도별 예측
     </p>
+
   </div>
 </header>
 
 
 <main>
 
-  <!-- ============================= -->
-  <!-- 1. 이미지 분석 -->
-  <!-- ============================= -->
+  <!-- ================================================= -->
+  <!-- 01 이미지 분석 -->
+  <!-- ================================================= -->
 
   <section class="card">
 
     <div class="section-title">
+
       <span class="step">01</span>
 
       <div>
         <h2>효모 이미지 분석</h2>
+
         <p>
-          현미경 이미지를 업로드하여 효모가 차지하는 영역을 계산합니다.
+          배지 사진을 업로드한 뒤 분석할 원형 영역을 설정합니다.
         </p>
       </div>
+
     </div>
 
 
@@ -54,10 +63,12 @@
         accept="image/*"
       >
 
-      <strong>현미경 사진 선택</strong>
+      <strong>
+        배지 사진 선택
+      </strong>
 
       <span>
-        JPG, PNG 등의 이미지를 업로드하세요.
+        JPG, PNG 이미지를 업로드하세요.
       </span>
 
     </label>
@@ -70,7 +81,13 @@
 
       <div class="image-panel">
 
-        <h3>원본 이미지</h3>
+        <h3>
+          원본 이미지 + 분석 영역
+        </h3>
+
+        <p class="canvas-guide">
+          사진에서 배지의 중심을 클릭하세요.
+        </p>
 
         <canvas id="originalCanvas"></canvas>
 
@@ -79,7 +96,13 @@
 
       <div class="image-panel">
 
-        <h3>분석 이미지</h3>
+        <h3>
+          분석 결과
+        </h3>
+
+        <p class="canvas-guide">
+          흰색 = 효모로 판정된 영역
+        </p>
 
         <canvas id="processedCanvas"></canvas>
 
@@ -88,16 +111,110 @@
     </div>
 
 
+    <!-- 원형 분석 영역 설정 -->
+
     <div
-      id="thresholdArea"
-      class="threshold-area hidden"
+      id="roiArea"
+      class="control-box hidden"
     >
 
-      <div class="threshold-title">
+      <div class="control-header">
+        <strong>배지 분석 영역 설정</strong>
+      </div>
 
-        <strong>Threshold</strong>
 
-        <span id="thresholdValue">
+      <div class="slider-row">
+
+        <div class="slider-info">
+
+          <span>
+            배지 반지름
+          </span>
+
+          <strong id="radiusValue">
+            40%
+          </strong>
+
+        </div>
+
+
+        <input
+          type="range"
+          id="radiusSlider"
+          min="15"
+          max="50"
+          value="40"
+        >
+
+      </div>
+
+
+      <div class="slider-row">
+
+        <div class="slider-info">
+
+          <span>
+            테두리 제외
+          </span>
+
+          <strong id="marginValue">
+            10%
+          </strong>
+
+        </div>
+
+
+        <input
+          type="range"
+          id="marginSlider"
+          min="0"
+          max="30"
+          value="10"
+        >
+
+      </div>
+
+
+      <div class="roi-explanation">
+
+        <div class="legend-item">
+          <span class="legend-circle outer"></span>
+          배지 경계
+        </div>
+
+        <div class="legend-item">
+          <span class="legend-circle inner"></span>
+          실제 분석 영역
+        </div>
+
+      </div>
+
+
+      <p class="helper">
+        배지의 하얀 플라스틱 테두리가 효모로 잘못 인식되는 것을 막기 위해
+        바깥쪽 영역을 자동으로 제외합니다.
+      </p>
+
+    </div>
+
+
+    <!-- Threshold -->
+
+    <div
+      id="thresholdArea"
+      class="control-box hidden"
+    >
+
+      <div class="control-header">
+
+        <strong>
+          Threshold 설정
+        </strong>
+
+        <span
+          id="thresholdValue"
+          class="value-badge"
+        >
           128
         </span>
 
@@ -113,31 +230,35 @@
       >
 
 
-      <label class="invert-option">
+      <label class="check-option">
 
         <input
           type="checkbox"
           id="invertThreshold"
+          checked
         >
 
         밝은 영역을 효모로 인식
-
       </label>
 
 
       <p class="helper">
-        분석 이미지에서 흰색으로 표시된 부분을 효모 부착 영역으로 계산합니다.
+        오른쪽 분석 이미지에서 흰색으로 표시되는 부분만 효모 영역으로 계산됩니다.
       </p>
 
     </div>
 
+
+    <!-- 결과 -->
 
     <div
       id="coverageResult"
       class="coverage-result hidden"
     >
 
-      <span>계산된 표면 부착률</span>
+      <span>
+        분석 영역 내 표면 부착률
+      </span>
 
       <strong id="coverageValue">
         0.00%
@@ -150,9 +271,10 @@
   </section>
 
 
-  <!-- ============================= -->
-  <!-- 2. 실험 조건 -->
-  <!-- ============================= -->
+
+  <!-- ================================================= -->
+  <!-- 02 실험 조건 -->
+  <!-- ================================================= -->
 
   <section class="card">
 
@@ -161,11 +283,15 @@
       <span class="step">02</span>
 
       <div>
-        <h2>실험 조건 입력</h2>
+
+        <h2>
+          실험 조건 입력
+        </h2>
 
         <p>
-          분석한 사진의 시간과 효모 농도를 입력합니다.
+          분석한 사진의 접촉 시간과 효모 농도를 입력합니다.
         </p>
+
       </div>
 
     </div>
@@ -175,7 +301,9 @@
 
       <label>
 
-        <span>접촉 시간</span>
+        <span>
+          접촉 시간
+        </span>
 
         <div class="input-with-unit">
 
@@ -187,7 +315,9 @@
             placeholder="30"
           >
 
-          <span>분</span>
+          <span>
+            분
+          </span>
 
         </div>
 
@@ -196,7 +326,9 @@
 
       <label>
 
-        <span>효모 농도</span>
+        <span>
+          효모 농도
+        </span>
 
         <div class="scientific-input">
 
@@ -208,17 +340,20 @@
             placeholder="1.0"
           >
 
-          <span>× 10</span>
+          <span>
+            × 10
+          </span>
 
           <input
             id="concentrationExponent"
             class="exponent"
             type="number"
             value="6"
-            step="1"
           >
 
-          <span>cells/mL</span>
+          <span>
+            cells/mL
+          </span>
 
         </div>
 
@@ -237,9 +372,10 @@
   </section>
 
 
-  <!-- ============================= -->
-  <!-- 3. 데이터 -->
-  <!-- ============================= -->
+
+  <!-- ================================================= -->
+  <!-- 03 데이터 -->
+  <!-- ================================================= -->
 
   <section class="card">
 
@@ -248,11 +384,15 @@
       <span class="step">03</span>
 
       <div>
-        <h2>실험 데이터</h2>
+
+        <h2>
+          실험 데이터
+        </h2>
 
         <p>
-          같은 시간과 농도의 반복 측정값은 자동으로 평균 처리됩니다.
+          같은 농도와 시간에서 반복한 측정값을 저장합니다.
         </p>
+
       </div>
 
     </div>
@@ -313,9 +453,10 @@
   </section>
 
 
-  <!-- ============================= -->
-  <!-- 4. 분석 -->
-  <!-- ============================= -->
+
+  <!-- ================================================= -->
+  <!-- 04 분석 -->
+  <!-- ================================================= -->
 
   <section class="card">
 
@@ -325,10 +466,12 @@
 
       <div>
 
-        <h2>시간별 부착률 분석</h2>
+        <h2>
+          시간별 부착률 분석
+        </h2>
 
         <p>
-          반복 실험의 평균값을 계산하여 농도별 부착 곡선을 표시합니다.
+          반복 측정값의 평균과 표준편차를 계산하고 농도별 그래프를 생성합니다.
         </p>
 
       </div>
@@ -386,7 +529,9 @@
 
       <div class="model-info">
 
-        <h3>모델 분석</h3>
+        <h3>
+          모델 분석
+        </h3>
 
         <p id="modelDescription"></p>
 
@@ -397,9 +542,10 @@
   </section>
 
 
-  <!-- ============================= -->
-  <!-- 5. 예측 -->
-  <!-- ============================= -->
+
+  <!-- ================================================= -->
+  <!-- 05 예측 -->
+  <!-- ================================================= -->
 
   <section class="card">
 
@@ -409,10 +555,12 @@
 
       <div>
 
-        <h2>다른 조건의 부착률 예측</h2>
+        <h2>
+          다른 조건의 부착률 예측
+        </h2>
 
         <p>
-          현재까지 입력한 실험 데이터의 시간·농도 관계를 이용합니다.
+          입력된 실험 데이터에서 시간과 농도의 관계를 분석하여 예측합니다.
         </p>
 
       </div>
@@ -424,7 +572,9 @@
 
       <label>
 
-        <span>예측 시간</span>
+        <span>
+          예측 시간
+        </span>
 
         <div class="input-with-unit">
 
@@ -436,7 +586,9 @@
             placeholder="45"
           >
 
-          <span>분</span>
+          <span>
+            분
+          </span>
 
         </div>
 
@@ -445,7 +597,9 @@
 
       <label>
 
-        <span>예측 농도</span>
+        <span>
+          예측 농도
+        </span>
 
         <div class="scientific-input">
 
@@ -457,7 +611,9 @@
             placeholder="2.0"
           >
 
-          <span>× 10</span>
+          <span>
+            × 10
+          </span>
 
           <input
             id="predictionExponent"
@@ -466,7 +622,9 @@
             value="6"
           >
 
-          <span>cells/mL</span>
+          <span>
+            cells/mL
+          </span>
 
         </div>
 
@@ -488,7 +646,9 @@
       class="prediction-result hidden"
     >
 
-      <span>예상 표면 부착률</span>
+      <span>
+        예상 표면 부착률
+      </span>
 
       <strong id="predictionValue">
         -
@@ -501,9 +661,8 @@
 
     <div class="warning-box">
 
-      이 예측은 입력한 실험 데이터에서 계산한 회귀 모델을 이용한
-      탐색적 예측입니다. 실험 데이터의 시간·농도 범위를 크게 벗어난
-      외삽 결과는 실제 현상을 정확히 나타내지 않을 수 있습니다.
+      예측값은 입력된 실험 데이터를 이용한 탐색적 회귀 결과입니다.
+      실제 실험 범위를 크게 벗어난 조건에서는 오차가 커질 수 있습니다.
 
     </div>
 
