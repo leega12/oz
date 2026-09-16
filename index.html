@@ -4,338 +4,84 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Yeast Attachment Analyzer</title>
+  <title>Yeast Attachment Lab</title>
 
   <link rel="stylesheet" href="style.css">
 
-  <!-- 그래프 라이브러리 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
 
 <header>
-  <div class="header-inner">
-    <div>
-      <p class="eyebrow">BIOFILM DATA ANALYSIS</p>
-      <h1>Yeast Attachment Analyzer</h1>
-      <p class="subtitle">
-        효모 초기 표면 부착률 분석 및 로지스틱 모델 비교
-      </p>
-    </div>
+  <div class="header-content">
+    <p class="eyebrow">BIOFILM IMAGE ANALYSIS</p>
+
+    <h1>Yeast Attachment Lab</h1>
+
+    <p>
+      효모 표면 부착률 이미지 분석 · 실험 데이터 모델링 · 농도별 예측
+    </p>
   </div>
 </header>
 
 
 <main>
 
-  <!-- 실험 데이터 입력 -->
+  <!-- ============================= -->
+  <!-- 1. 이미지 분석 -->
+  <!-- ============================= -->
+
   <section class="card">
 
     <div class="section-title">
-      <div class="step">01</div>
+      <span class="step">01</span>
 
       <div>
-        <h2>실험 데이터 입력</h2>
+        <h2>효모 이미지 분석</h2>
         <p>
-          ImageJ의 Area Fraction으로 측정한 표면 피복률(%)을 입력하세요.
+          현미경 이미지를 업로드하여 효모가 차지하는 영역을 계산합니다.
         </p>
       </div>
     </div>
 
 
-    <div class="table-wrapper">
+    <label class="upload-box">
 
-      <table id="dataTable">
+      <input
+        type="file"
+        id="imageInput"
+        accept="image/*"
+      >
 
-        <thead>
-          <tr>
-            <th>시간 (분)</th>
-            <th>1차 측정 (%)</th>
-            <th>2차 측정 (%)</th>
-            <th>3차 측정 (%)</th>
-          </tr>
-        </thead>
+      <strong>현미경 사진 선택</strong>
 
-        <tbody>
-
-          <tr>
-            <td>0</td>
-
-            <td>
-              <input type="number"
-                     class="measurement"
-                     data-time="0"
-                     step="0.01"
-                     min="0"
-                     max="100"
-                     placeholder="0.00">
-            </td>
-
-            <td>
-              <input type="number"
-                     class="measurement"
-                     data-time="0"
-                     step="0.01"
-                     min="0"
-                     max="100"
-                     placeholder="0.00">
-            </td>
-
-            <td>
-              <input type="number"
-                     class="measurement"
-                     data-time="0"
-                     step="0.01"
-                     min="0"
-                     max="100"
-                     placeholder="0.00">
-            </td>
-
-          </tr>
-
-
-          <tr>
-            <td>30</td>
-
-            <td>
-              <input type="number"
-                     class="measurement"
-                     data-time="30"
-                     step="0.01"
-                     min="0"
-                     max="100"
-                     placeholder="0.00">
-            </td>
-
-            <td>
-              <input type="number"
-                     class="measurement"
-                     data-time="30"
-                     step="0.01"
-                     min="0"
-                     max="100"
-                     placeholder="0.00">
-            </td>
-
-            <td>
-              <input type="number"
-                     class="measurement"
-                     data-time="30"
-                     step="0.01"
-                     min="0"
-                     max="100"
-                     placeholder="0.00">
-            </td>
-
-          </tr>
-
-
-          <tr>
-            <td>60</td>
-
-            <td>
-              <input type="number"
-                     class="measurement"
-                     data-time="60"
-                     step="0.01"
-                     min="0"
-                     max="100"
-                     placeholder="0.00">
-            </td>
-
-            <td>
-              <input type="number"
-                     class="measurement"
-                     data-time="60"
-                     step="0.01"
-                     min="0"
-                     max="100"
-                     placeholder="0.00">
-            </td>
-
-            <td>
-              <input type="number"
-                     class="measurement"
-                     data-time="60"
-                     step="0.01"
-                     min="0"
-                     max="100"
-                     placeholder="0.00">
-            </td>
-
-          </tr>
-
-        </tbody>
-
-      </table>
-
-    </div>
-
-  </section>
-
-
-  <!-- 로지스틱 모델 -->
-  <section class="card">
-
-    <div class="section-title">
-
-      <div class="step">02</div>
-
-      <div>
-        <h2>로지스틱 모델 설정</h2>
-        <p>
-          공개 데이터에서 얻은 로지스틱 모델의 매개변수를 입력하세요.
-        </p>
-      </div>
-
-    </div>
-
-
-    <div class="formula">
-
-      P(t) =
-      <span class="fraction">
-
-        <span>K</span>
-
-        <span class="fraction-line"></span>
-
-        <span>
-          1 + e<sup>-r(t - t₀)</sup>
-        </span>
-
+      <span>
+        JPG, PNG 등의 이미지를 업로드하세요.
       </span>
 
-    </div>
+    </label>
 
 
-    <div class="parameter-grid">
+    <div
+      id="imageArea"
+      class="image-area hidden"
+    >
 
-      <label>
+      <div class="image-panel">
 
-        <span>K</span>
+        <h3>원본 이미지</h3>
 
-        <small>최대 피복률</small>
+        <canvas id="originalCanvas"></canvas>
 
-        <input
-          id="K"
-          type="number"
-          step="0.01"
-          placeholder="예: 80">
-
-      </label>
-
-
-      <label>
-
-        <span>r</span>
-
-        <small>성장률</small>
-
-        <input
-          id="r"
-          type="number"
-          step="0.001"
-          placeholder="예: 0.05">
-
-      </label>
-
-
-      <label>
-
-        <span>t₀</span>
-
-        <small>변곡점 시간 (분)</small>
-
-        <input
-          id="t0"
-          type="number"
-          step="0.01"
-          placeholder="예: 40">
-
-      </label>
-
-    </div>
-
-
-    <div class="notice">
-
-      ⚠ 현재 입력하는 K, r, t₀ 값은
-      실제 공개 바이오필름 데이터를 분석하여 결정해야 합니다.
-      임의의 값을 연구 결과로 사용하면 안 됩니다.
-
-    </div>
-
-  </section>
-
-
-  <!-- 설정 -->
-  <section class="card">
-
-    <div class="section-title">
-
-      <div class="step">03</div>
-
-      <div>
-        <h2>분석 설정</h2>
-        <p>
-          실제 측정값과 모델을 비교하는 방식을 선택하세요.
-        </p>
       </div>
 
-    </div>
 
+      <div class="image-panel">
 
-    <div class="toggle-area">
+        <h3>분석 이미지</h3>
 
-      <label class="toggle-label">
-
-        <input
-          type="checkbox"
-          id="normalize">
-
-        <span>
-          정규화하여 증가 패턴 비교
-        </span>
-
-      </label>
-
-
-      <p class="helper">
-        서로 다른 실험 조건의 데이터를 비교할 경우
-        정규화를 사용하는 것이 더 적절할 수 있습니다.
-      </p>
-
-    </div>
-
-
-    <button
-      id="analyzeBtn"
-      onclick="analyzeData()">
-
-      분석 시작
-
-    </button>
-
-  </section>
-
-
-  <!-- 결과 -->
-  <section
-    id="resultSection"
-    class="card hidden">
-
-    <div class="section-title">
-
-      <div class="step">04</div>
-
-      <div>
-        <h2>분석 결과</h2>
-
-        <p>
-          실제 효모 부착률과 로지스틱 모델의 예측 결과입니다.
-        </p>
+        <canvas id="processedCanvas"></canvas>
 
       </div>
 
@@ -343,44 +89,202 @@
 
 
     <div
-      id="summaryCards"
-      class="summary-grid">
+      id="thresholdArea"
+      class="threshold-area hidden"
+    >
+
+      <div class="threshold-title">
+
+        <strong>Threshold</strong>
+
+        <span id="thresholdValue">
+          128
+        </span>
+
+      </div>
+
+
+      <input
+        type="range"
+        id="threshold"
+        min="0"
+        max="255"
+        value="128"
+      >
+
+
+      <label class="invert-option">
+
+        <input
+          type="checkbox"
+          id="invertThreshold"
+        >
+
+        밝은 영역을 효모로 인식
+
+      </label>
+
+
+      <p class="helper">
+        분석 이미지에서 흰색으로 표시된 부분을 효모 부착 영역으로 계산합니다.
+      </p>
+
     </div>
 
 
-    <div class="chart-container">
+    <div
+      id="coverageResult"
+      class="coverage-result hidden"
+    >
 
-      <canvas id="resultChart"></canvas>
+      <span>계산된 표면 부착률</span>
+
+      <strong id="coverageValue">
+        0.00%
+      </strong>
+
+      <small id="pixelInfo"></small>
+
+    </div>
+
+  </section>
+
+
+  <!-- ============================= -->
+  <!-- 2. 실험 조건 -->
+  <!-- ============================= -->
+
+  <section class="card">
+
+    <div class="section-title">
+
+      <span class="step">02</span>
+
+      <div>
+        <h2>실험 조건 입력</h2>
+
+        <p>
+          분석한 사진의 시간과 효모 농도를 입력합니다.
+        </p>
+      </div>
 
     </div>
 
 
-    <div class="result-table-wrapper">
+    <div class="input-grid">
+
+      <label>
+
+        <span>접촉 시간</span>
+
+        <div class="input-with-unit">
+
+          <input
+            id="timeInput"
+            type="number"
+            min="0"
+            step="0.1"
+            placeholder="30"
+          >
+
+          <span>분</span>
+
+        </div>
+
+      </label>
+
+
+      <label>
+
+        <span>효모 농도</span>
+
+        <div class="scientific-input">
+
+          <input
+            id="concentrationCoefficient"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="1.0"
+          >
+
+          <span>× 10</span>
+
+          <input
+            id="concentrationExponent"
+            class="exponent"
+            type="number"
+            value="6"
+            step="1"
+          >
+
+          <span>cells/mL</span>
+
+        </div>
+
+      </label>
+
+    </div>
+
+
+    <button
+      class="primary-button"
+      onclick="addExperiment()"
+    >
+      현재 분석값을 실험 데이터에 추가
+    </button>
+
+  </section>
+
+
+  <!-- ============================= -->
+  <!-- 3. 데이터 -->
+  <!-- ============================= -->
+
+  <section class="card">
+
+    <div class="section-title">
+
+      <span class="step">03</span>
+
+      <div>
+        <h2>실험 데이터</h2>
+
+        <p>
+          같은 시간과 농도의 반복 측정값은 자동으로 평균 처리됩니다.
+        </p>
+      </div>
+
+    </div>
+
+
+    <div class="table-wrapper">
 
       <table>
 
         <thead>
 
           <tr>
-
+            <th>#</th>
             <th>시간</th>
-
-            <th>평균 피복률</th>
-
-            <th>표준편차</th>
-
-            <th>모델 예측값</th>
-
-            <th>차이</th>
-
-            <th>절대오차</th>
-
+            <th>농도</th>
+            <th>부착률</th>
+            <th>삭제</th>
           </tr>
 
         </thead>
 
 
-        <tbody id="resultBody">
+        <tbody id="rawDataBody">
+
+          <tr class="empty-row">
+
+            <td colspan="5">
+              아직 등록된 실험 데이터가 없습니다.
+            </td>
+
+          </tr>
+
         </tbody>
 
       </table>
@@ -388,34 +292,218 @@
     </div>
 
 
-    <div class="interpretation">
+    <div class="button-row">
 
-      <h3>자동 분석</h3>
+      <button
+        class="secondary-button"
+        onclick="clearExperiments()"
+      >
+        전체 삭제
+      </button>
 
-      <div id="interpretationText">
+      <button
+        class="secondary-button"
+        onclick="downloadCSV()"
+      >
+        CSV 저장
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <!-- ============================= -->
+  <!-- 4. 분석 -->
+  <!-- ============================= -->
+
+  <section class="card">
+
+    <div class="section-title">
+
+      <span class="step">04</span>
+
+      <div>
+
+        <h2>시간별 부착률 분석</h2>
+
+        <p>
+          반복 실험의 평균값을 계산하여 농도별 부착 곡선을 표시합니다.
+        </p>
+
       </div>
 
     </div>
 
 
-    <div class="button-row">
-
-      <button
-        class="secondary"
-        onclick="downloadCSV()">
-
-        결과 CSV 저장
-
-      </button>
+    <button
+      class="primary-button"
+      onclick="analyzeExperiments()"
+    >
+      실험 데이터 분석
+    </button>
 
 
-      <button
-        class="secondary"
-        onclick="resetData()">
+    <div
+      id="analysisResult"
+      class="hidden"
+    >
 
-        초기화
+      <div class="chart-container">
 
-      </button>
+        <canvas id="experimentChart"></canvas>
+
+      </div>
+
+
+      <h3 class="subheading">
+        평균값
+      </h3>
+
+
+      <div class="table-wrapper">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>농도</th>
+              <th>시간</th>
+              <th>반복 횟수</th>
+              <th>평균 부착률</th>
+              <th>표준편차</th>
+            </tr>
+
+          </thead>
+
+          <tbody id="averageBody"></tbody>
+
+        </table>
+
+      </div>
+
+
+      <div class="model-info">
+
+        <h3>모델 분석</h3>
+
+        <p id="modelDescription"></p>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ============================= -->
+  <!-- 5. 예측 -->
+  <!-- ============================= -->
+
+  <section class="card">
+
+    <div class="section-title">
+
+      <span class="step">05</span>
+
+      <div>
+
+        <h2>다른 조건의 부착률 예측</h2>
+
+        <p>
+          현재까지 입력한 실험 데이터의 시간·농도 관계를 이용합니다.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="input-grid">
+
+      <label>
+
+        <span>예측 시간</span>
+
+        <div class="input-with-unit">
+
+          <input
+            id="predictionTime"
+            type="number"
+            min="0"
+            step="0.1"
+            placeholder="45"
+          >
+
+          <span>분</span>
+
+        </div>
+
+      </label>
+
+
+      <label>
+
+        <span>예측 농도</span>
+
+        <div class="scientific-input">
+
+          <input
+            id="predictionCoefficient"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="2.0"
+          >
+
+          <span>× 10</span>
+
+          <input
+            id="predictionExponent"
+            class="exponent"
+            type="number"
+            value="6"
+          >
+
+          <span>cells/mL</span>
+
+        </div>
+
+      </label>
+
+    </div>
+
+
+    <button
+      class="primary-button"
+      onclick="predictCoverage()"
+    >
+      예측하기
+    </button>
+
+
+    <div
+      id="predictionResult"
+      class="prediction-result hidden"
+    >
+
+      <span>예상 표면 부착률</span>
+
+      <strong id="predictionValue">
+        -
+      </strong>
+
+      <p id="predictionExplanation"></p>
+
+    </div>
+
+
+    <div class="warning-box">
+
+      이 예측은 입력한 실험 데이터에서 계산한 회귀 모델을 이용한
+      탐색적 예측입니다. 실험 데이터의 시간·농도 범위를 크게 벗어난
+      외삽 결과는 실제 현상을 정확히 나타내지 않을 수 있습니다.
 
     </div>
 
@@ -426,13 +514,13 @@
 
 <footer>
 
-  <p>
-    Yeast Attachment Analyzer
-  </p>
+  <strong>
+    Yeast Attachment Lab
+  </strong>
 
-  <p>
-    ImageJ × Mathematical Modeling
-  </p>
+  <span>
+    Image Analysis × Experimental Data × Mathematical Modeling
+  </span>
 
 </footer>
 
