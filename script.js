@@ -1,31 +1,59 @@
-/* =========================================
+/* =====================================================
    Yeast Attachment Lab
-========================================= */
+===================================================== */
 
 let currentCoverage = null;
+
 let experiments = [];
+
 let chart = null;
+
 let fittedModel = null;
 
+
+/*
+배지 ROI 정보
+*/
+
+let roiCenterX = null;
+
+let roiCenterY = null;
+
+let originalImageData = null;
+
+
 const originalCanvas =
-  document.getElementById("originalCanvas");
+  document.getElementById(
+    "originalCanvas"
+  );
+
 
 const processedCanvas =
-  document.getElementById("processedCanvas");
+  document.getElementById(
+    "processedCanvas"
+  );
+
 
 const originalCtx =
-  originalCanvas.getContext("2d");
+  originalCanvas.getContext(
+    "2d"
+  );
+
 
 const processedCtx =
-  processedCanvas.getContext("2d");
+  processedCanvas.getContext(
+    "2d"
+  );
 
 
-/* =========================================
+/* =====================================================
    이미지 업로드
-========================================= */
+===================================================== */
 
 document
-  .getElementById("imageInput")
+  .getElementById(
+    "imageInput"
+  )
   .addEventListener(
     "change",
     handleImageUpload
@@ -37,7 +65,12 @@ function handleImageUpload(event) {
   const file =
     event.target.files[0];
 
-  if (!file) return;
+
+  if (!file) {
+
+    return;
+
+  }
 
 
   const reader =
@@ -54,33 +87,54 @@ function handleImageUpload(event) {
       img.onload =
         function() {
 
-          const MAX_WIDTH = 900;
-
-          let width = img.width;
-          let height = img.height;
+          const MAX_WIDTH =
+            1000;
 
 
-          if (width > MAX_WIDTH) {
+          let width =
+            img.width;
 
-            height =
-              height *
-              (MAX_WIDTH / width);
+
+          let height =
+            img.height;
+
+
+          if (
+            width >
+            MAX_WIDTH
+          ) {
+
+            const ratio =
+              MAX_WIDTH /
+              width;
+
 
             width =
               MAX_WIDTH;
+
+
+            height =
+              height *
+              ratio;
 
           }
 
 
           width =
-            Math.round(width);
+            Math.round(
+              width
+            );
+
 
           height =
-            Math.round(height);
+            Math.round(
+              height
+            );
 
 
           originalCanvas.width =
             width;
+
 
           originalCanvas.height =
             height;
@@ -89,32 +143,54 @@ function handleImageUpload(event) {
           processedCanvas.width =
             width;
 
+
           processedCanvas.height =
             height;
 
 
           originalCtx.drawImage(
+
             img,
+
             0,
+
             0,
+
             width,
+
             height
+
           );
 
 
-          document
-            .getElementById("imageArea")
-            .classList.remove("hidden");
+          originalImageData =
+            originalCtx.getImageData(
+
+              0,
+
+              0,
+
+              width,
+
+              height
+
+            );
 
 
-          document
-            .getElementById("thresholdArea")
-            .classList.remove("hidden");
+          /*
+          처음에는 이미지 중심을
+          기본 ROI 중심으로 설정
+          */
+
+          roiCenterX =
+            width / 2;
 
 
-          document
-            .getElementById("coverageResult")
-            .classList.remove("hidden");
+          roiCenterY =
+            height / 2;
+
+
+          showImageControls();
 
 
           analyzeImage();
@@ -122,28 +198,184 @@ function handleImageUpload(event) {
         };
 
 
-      img.src = e.target.result;
+      img.src =
+        e.target.result;
 
     };
 
 
-  reader.readAsDataURL(file);
+  reader.readAsDataURL(
+    file
+  );
 
 }
 
 
-/* =========================================
-   Threshold 변경
-========================================= */
+/* =====================================================
+   UI 표시
+===================================================== */
+
+function showImageControls() {
+
+  document
+    .getElementById(
+      "imageArea"
+    )
+    .classList
+    .remove(
+      "hidden"
+    );
+
+
+  document
+    .getElementById(
+      "roiArea"
+    )
+    .classList
+    .remove(
+      "hidden"
+    );
+
+
+  document
+    .getElementById(
+      "thresholdArea"
+    )
+    .classList
+    .remove(
+      "hidden"
+    );
+
+
+  document
+    .getElementById(
+      "coverageResult"
+    )
+    .classList
+    .remove(
+      "hidden"
+    );
+
+}
+
+
+/* =====================================================
+   사진 클릭 → 배지 중심 지정
+===================================================== */
+
+originalCanvas
+  .addEventListener(
+    "click",
+    function(event) {
+
+      if (
+        !originalImageData
+      ) {
+
+        return;
+
+      }
+
+
+      const rect =
+        originalCanvas
+          .getBoundingClientRect();
+
+
+      const scaleX =
+        originalCanvas.width /
+        rect.width;
+
+
+      const scaleY =
+        originalCanvas.height /
+        rect.height;
+
+
+      roiCenterX =
+        (
+          event.clientX -
+          rect.left
+        ) *
+        scaleX;
+
+
+      roiCenterY =
+        (
+          event.clientY -
+          rect.top
+        ) *
+        scaleY;
+
+
+      analyzeImage();
+
+    }
+  );
+
+
+/* =====================================================
+   Slider events
+===================================================== */
 
 document
-  .getElementById("threshold")
+  .getElementById(
+    "radiusSlider"
+  )
   .addEventListener(
     "input",
     function() {
 
       document
-        .getElementById("thresholdValue")
+        .getElementById(
+          "radiusValue"
+        )
+        .textContent =
+        this.value +
+        "%";
+
+
+      analyzeImage();
+
+    }
+  );
+
+
+document
+  .getElementById(
+    "marginSlider"
+  )
+  .addEventListener(
+    "input",
+    function() {
+
+      document
+        .getElementById(
+          "marginValue"
+        )
+        .textContent =
+        this.value +
+        "%";
+
+
+      analyzeImage();
+
+    }
+  );
+
+
+document
+  .getElementById(
+    "threshold"
+  )
+  .addEventListener(
+    "input",
+    function() {
+
+      document
+        .getElementById(
+          "thresholdValue"
+        )
         .textContent =
         this.value;
 
@@ -155,174 +387,540 @@ document
 
 
 document
-  .getElementById("invertThreshold")
+  .getElementById(
+    "invertThreshold"
+  )
   .addEventListener(
     "change",
     analyzeImage
   );
 
 
-/* =========================================
+/* =====================================================
    이미지 분석
-========================================= */
+===================================================== */
 
 function analyzeImage() {
 
   if (
-    originalCanvas.width === 0 ||
-    originalCanvas.height === 0
+    !originalImageData
   ) {
+
     return;
+
   }
+
+
+  const width =
+    originalCanvas.width;
+
+
+  const height =
+    originalCanvas.height;
+
+
+  /*
+  ROI 최대 반지름 기준
+  */
+
+  const minDimension =
+    Math.min(
+      width,
+      height
+    );
+
+
+  const radiusPercent =
+    Number(
+      document
+        .getElementById(
+          "radiusSlider"
+        )
+        .value
+    );
+
+
+  const rimMargin =
+    Number(
+      document
+        .getElementById(
+          "marginSlider"
+        )
+        .value
+    );
+
+
+  const outerRadius =
+
+    minDimension *
+
+    (
+      radiusPercent /
+      100
+    );
+
+
+  /*
+  실제 분석 반지름
+
+  예:
+  outer radius = 100
+  margin = 10%
+
+  → inner radius = 90
+  */
+
+  const innerRadius =
+
+    outerRadius *
+
+    (
+      1 -
+      rimMargin /
+      100
+    );
 
 
   const threshold =
     Number(
       document
-        .getElementById("threshold")
+        .getElementById(
+          "threshold"
+        )
         .value
     );
 
 
-  const invert =
+  const brightIsYeast =
+
     document
-      .getElementById("invertThreshold")
+      .getElementById(
+        "invertThreshold"
+      )
       .checked;
 
 
-  const imageData =
-    originalCtx.getImageData(
-      0,
-      0,
-      originalCanvas.width,
-      originalCanvas.height
-    );
+  const pixels =
+    originalImageData.data;
 
 
   const output =
-    processedCtx.createImageData(
-      imageData.width,
-      imageData.height
-    );
+    processedCtx
+      .createImageData(
 
+        width,
 
-  const pixels =
-    imageData.data;
+        height
+
+      );
+
 
   const result =
     output.data;
 
 
-  let attachedPixels = 0;
+  let attachedPixels =
+    0;
 
-  const totalPixels =
-    imageData.width *
-    imageData.height;
+
+  let roiPixels =
+    0;
 
 
   for (
-    let i = 0;
-    i < pixels.length;
-    i += 4
+    let y = 0;
+    y < height;
+    y++
   ) {
 
-    const r = pixels[i];
-    const g = pixels[i + 1];
-    const b = pixels[i + 2];
+    for (
+      let x = 0;
+      x < width;
+      x++
+    ) {
+
+      const index =
+        (
+          y *
+          width +
+          x
+        ) * 4;
 
 
-    /*
-       인간의 밝기 인식에 가까운
-       luminance 계산
-    */
+      /*
+      중심으로부터 거리
+      */
 
-    const gray =
-      0.299 * r +
-      0.587 * g +
-      0.114 * b;
+      const dx =
+        x -
+        roiCenterX;
 
 
-    let attached;
+      const dy =
+        y -
+        roiCenterY;
 
 
-    if (invert) {
+      const distance =
 
-      attached =
-        gray >= threshold;
+        Math.sqrt(
+
+          dx * dx +
+
+          dy * dy
+
+        );
+
+
+      /*
+      실제 분석 영역 내부인가?
+      */
+
+      const insideROI =
+
+        distance <=
+        innerRadius;
+
+
+      if (!insideROI) {
+
+        /*
+        분석 대상이 아닌 픽셀은
+        어두운 회색으로 표시
+        */
+
+        result[index] =
+          35;
+
+        result[index + 1] =
+          35;
+
+        result[index + 2] =
+          35;
+
+        result[index + 3] =
+          255;
+
+
+        continue;
+
+      }
+
+
+      roiPixels++;
+
+
+      const red =
+        pixels[index];
+
+
+      const green =
+        pixels[index + 1];
+
+
+      const blue =
+        pixels[index + 2];
+
+
+      /*
+      밝기 계산
+      */
+
+      const brightness =
+
+        0.299 * red +
+
+        0.587 * green +
+
+        0.114 * blue;
+
+
+      let yeast;
+
+
+      if (
+        brightIsYeast
+      ) {
+
+        yeast =
+
+          brightness >=
+          threshold;
+
+      }
+
+      else {
+
+        yeast =
+
+          brightness <=
+          threshold;
+
+      }
+
+
+      if (yeast) {
+
+        attachedPixels++;
+
+
+        /*
+        효모 영역 = 흰색
+        */
+
+        result[index] =
+          255;
+
+        result[index + 1] =
+          255;
+
+        result[index + 2] =
+          255;
+
+      }
+
+      else {
+
+        /*
+        배경 영역 = 검정
+        */
+
+        result[index] =
+          0;
+
+        result[index + 1] =
+          0;
+
+        result[index + 2] =
+          0;
+
+      }
+
+
+      result[index + 3] =
+        255;
 
     }
-
-    else {
-
-      attached =
-        gray <= threshold;
-
-    }
-
-
-    if (attached) {
-
-      attachedPixels++;
-
-      result[i] = 255;
-      result[i + 1] = 255;
-      result[i + 2] = 255;
-
-    }
-
-    else {
-
-      result[i] = 0;
-      result[i + 1] = 0;
-      result[i + 2] = 0;
-
-    }
-
-
-    result[i + 3] = 255;
 
   }
 
 
   processedCtx.putImageData(
+
     output,
+
     0,
+
     0
+
   );
 
 
-  currentCoverage =
-    (
-      attachedPixels /
-      totalPixels
-    ) * 100;
+  if (
+    roiPixels >
+    0
+  ) {
+
+    currentCoverage =
+
+      (
+        attachedPixels /
+        roiPixels
+      ) *
+      100;
+
+  }
+
+  else {
+
+    currentCoverage =
+      0;
+
+  }
 
 
   document
-    .getElementById("coverageValue")
+    .getElementById(
+      "coverageValue"
+    )
     .textContent =
-    currentCoverage.toFixed(2) + "%";
+
+    currentCoverage
+      .toFixed(
+        2
+      ) +
+    "%";
 
 
   document
-    .getElementById("pixelInfo")
+    .getElementById(
+      "pixelInfo"
+    )
     .textContent =
-    `${attachedPixels.toLocaleString()} / ` +
-    `${totalPixels.toLocaleString()} pixels`;
+
+    attachedPixels
+      .toLocaleString() +
+
+    " / " +
+
+    roiPixels
+      .toLocaleString() +
+
+    " pixels";
+
+
+  drawROIOverlay(
+
+    outerRadius,
+
+    innerRadius
+
+  );
 
 }
 
 
-/* =========================================
+/* =====================================================
+   ROI 표시
+===================================================== */
+
+function drawROIOverlay(
+  outerRadius,
+  innerRadius
+) {
+
+  /*
+  원본 이미지 복원
+  */
+
+  originalCtx
+    .putImageData(
+
+      originalImageData,
+
+      0,
+
+      0
+
+    );
+
+
+  originalCtx.save();
+
+
+  /*
+  바깥 배지 경계
+  */
+
+  originalCtx.beginPath();
+
+
+  originalCtx.arc(
+
+    roiCenterX,
+
+    roiCenterY,
+
+    outerRadius,
+
+    0,
+
+    Math.PI * 2
+
+  );
+
+
+  originalCtx.strokeStyle =
+    "#ff5252";
+
+
+  originalCtx.lineWidth =
+    4;
+
+
+  originalCtx.stroke();
+
+
+  /*
+  실제 분석 영역
+  */
+
+  originalCtx.beginPath();
+
+
+  originalCtx.arc(
+
+    roiCenterX,
+
+    roiCenterY,
+
+    innerRadius,
+
+    0,
+
+    Math.PI * 2
+
+  );
+
+
+  originalCtx.strokeStyle =
+    "#30c7b6";
+
+
+  originalCtx.lineWidth =
+    4;
+
+
+  originalCtx.stroke();
+
+
+  /*
+  중심점
+  */
+
+  originalCtx.beginPath();
+
+
+  originalCtx.arc(
+
+    roiCenterX,
+
+    roiCenterY,
+
+    6,
+
+    0,
+
+    Math.PI * 2
+
+  );
+
+
+  originalCtx.fillStyle =
+    "#ffcc33";
+
+
+  originalCtx.fill();
+
+
+  originalCtx.restore();
+
+}
+
+
+/* =====================================================
    실험 데이터 추가
-========================================= */
+===================================================== */
 
 function addExperiment() {
 
-  if (currentCoverage === null) {
+  if (
+    currentCoverage ===
+    null
+  ) {
 
     alert(
-      "먼저 현미경 사진을 업로드해주세요."
+      "먼저 사진을 분석해주세요."
     );
 
     return;
@@ -331,40 +929,53 @@ function addExperiment() {
 
 
   const time =
+
     Number(
+
       document
-        .getElementById("timeInput")
+        .getElementById(
+          "timeInput"
+        )
         .value
+
     );
 
 
   const coefficient =
+
     Number(
+
       document
         .getElementById(
           "concentrationCoefficient"
         )
         .value
+
     );
 
 
   const exponent =
+
     Number(
+
       document
         .getElementById(
           "concentrationExponent"
         )
         .value
+
     );
 
 
   if (
-    !Number.isFinite(time) ||
+    !Number.isFinite(
+      time
+    ) ||
     time < 0
   ) {
 
     alert(
-      "올바른 접촉 시간을 입력해주세요."
+      "접촉 시간을 입력해주세요."
     );
 
     return;
@@ -373,13 +984,14 @@ function addExperiment() {
 
 
   if (
-    !Number.isFinite(coefficient) ||
-    coefficient <= 0 ||
-    !Number.isFinite(exponent)
+    !Number.isFinite(
+      coefficient
+    ) ||
+    coefficient <= 0
   ) {
 
     alert(
-      "올바른 효모 농도를 입력해주세요."
+      "효모 농도를 입력해주세요."
     );
 
     return;
@@ -388,7 +1000,9 @@ function addExperiment() {
 
 
   const concentration =
+
     coefficient *
+
     Math.pow(
       10,
       exponent
@@ -397,15 +1011,12 @@ function addExperiment() {
 
   experiments.push({
 
-    id: Date.now(),
+    id:
+      Date.now(),
 
     time,
 
     concentration,
-
-    coefficient,
-
-    exponent,
 
     coverage:
       currentCoverage
@@ -415,28 +1026,33 @@ function addExperiment() {
 
   saveExperiments();
 
+
   renderRawData();
 
 }
 
 
-/* =========================================
+/* =====================================================
    데이터 표시
-========================================= */
+===================================================== */
 
 function renderRawData() {
 
   const body =
-    document.getElementById(
-      "rawDataBody"
-    );
+
+    document
+      .getElementById(
+        "rawDataBody"
+      );
 
 
-  body.innerHTML = "";
+  body.innerHTML =
+    "";
 
 
   if (
-    experiments.length === 0
+    experiments.length ===
+    0
   ) {
 
     body.innerHTML = `
@@ -453,68 +1069,83 @@ function renderRawData() {
 
     `;
 
+
     return;
 
   }
 
 
-  experiments.forEach(
-    (experiment, index) => {
+  experiments
+    .forEach(
+      (
+        experiment,
+        index
+      ) => {
 
-      const row =
-        document.createElement("tr");
+        const row =
 
-
-      row.innerHTML = `
-
-        <td>
-          ${index + 1}
-        </td>
-
-        <td>
-          ${experiment.time}분
-        </td>
-
-        <td>
-          ${formatConcentration(
-            experiment.concentration
-          )}
-        </td>
-
-        <td>
-          ${experiment.coverage.toFixed(2)}%
-        </td>
-
-        <td>
-
-          <button
-            class="delete-button"
-            onclick="deleteExperiment(${experiment.id})"
-          >
-            삭제
-          </button>
-
-        </td>
-
-      `;
+          document
+            .createElement(
+              "tr"
+            );
 
 
-      body.appendChild(row);
+        row.innerHTML = `
 
-    }
-  );
+          <td>
+            ${index + 1}
+          </td>
+
+          <td>
+            ${experiment.time}분
+          </td>
+
+          <td>
+            ${formatConcentration(
+              experiment.concentration
+            )}
+          </td>
+
+          <td>
+            ${experiment.coverage.toFixed(2)}%
+          </td>
+
+          <td>
+
+            <button
+              class="delete-button"
+              onclick="deleteExperiment(${experiment.id})"
+            >
+
+              삭제
+
+            </button>
+
+          </td>
+
+        `;
+
+
+        body
+          .appendChild(
+            row
+          );
+
+      }
+    );
 
 }
 
 
-/* =========================================
+/* =====================================================
    농도 표시
-========================================= */
+===================================================== */
 
-function formatConcentration(value) {
+function formatConcentration(
+  value
+) {
 
   if (
-    !Number.isFinite(value) ||
     value <= 0
   ) {
 
@@ -524,13 +1155,20 @@ function formatConcentration(value) {
 
 
   const exponent =
+
     Math.floor(
-      Math.log10(value)
+
+      Math.log10(
+        value
+      )
+
     );
 
 
   const coefficient =
+
     value /
+
     Math.pow(
       10,
       exponent
@@ -538,29 +1176,44 @@ function formatConcentration(value) {
 
 
   return (
-    coefficient.toFixed(2) +
+
+    coefficient
+      .toFixed(
+        2
+      ) +
+
     " × 10^" +
+
     exponent +
+
     " cells/mL"
+
   );
 
 }
 
 
-/* =========================================
-   데이터 삭제
-========================================= */
+/* =====================================================
+   삭제
+===================================================== */
 
-function deleteExperiment(id) {
+function deleteExperiment(
+  id
+) {
 
   experiments =
+
     experiments.filter(
+
       experiment =>
-        experiment.id !== id
+        experiment.id !==
+        id
+
     );
 
 
   saveExperiments();
+
 
   renderRawData();
 
@@ -570,62 +1223,68 @@ function deleteExperiment(id) {
 function clearExperiments() {
 
   if (
-    experiments.length === 0
+    experiments.length ===
+    0
   ) {
+
     return;
+
   }
 
 
-  const confirmed =
-    confirm(
-      "등록된 실험 데이터를 모두 삭제할까요?"
-    );
+  if (
+    !confirm(
+      "모든 실험 데이터를 삭제할까요?"
+    )
+  ) {
+
+    return;
+
+  }
 
 
-  if (!confirmed) return;
+  experiments =
+    [];
 
 
-  experiments = [];
-
-  fittedModel = null;
+  fittedModel =
+    null;
 
 
   saveExperiments();
+
 
   renderRawData();
 
 
   document
-    .getElementById("analysisResult")
-    .classList.add("hidden");
-
-
-  document
-    .getElementById("predictionResult")
-    .classList.add("hidden");
-
-
-  if (chart) {
-
-    chart.destroy();
-
-    chart = null;
-
-  }
+    .getElementById(
+      "analysisResult"
+    )
+    .classList
+    .add(
+      "hidden"
+    );
 
 }
 
 
-/* =========================================
-   LocalStorage
-========================================= */
+/* =====================================================
+   저장
+===================================================== */
 
 function saveExperiments() {
 
-  localStorage.setItem(
-    "yeastAttachmentExperiments",
-    JSON.stringify(experiments)
-  );
+  localStorage
+    .setItem(
+
+      "yeastAttachmentExperiments",
+
+      JSON.stringify(
+        experiments
+      )
+
+    );
 
 }
 
@@ -635,23 +1294,28 @@ function loadExperiments() {
   try {
 
     const saved =
-      localStorage.getItem(
-        "yeastAttachmentExperiments"
-      );
+
+      localStorage
+        .getItem(
+          "yeastAttachmentExperiments"
+        );
 
 
     if (saved) {
 
       experiments =
-        JSON.parse(saved);
+        JSON.parse(
+          saved
+        );
 
     }
 
   }
 
-  catch (error) {
+  catch {
 
-    experiments = [];
+    experiments =
+      [];
 
   }
 
@@ -661,53 +1325,84 @@ function loadExperiments() {
 }
 
 
-/* =========================================
+/* =====================================================
    평균
-========================================= */
+===================================================== */
 
-function mean(values) {
+function mean(
+  values
+) {
 
   return (
+
     values.reduce(
+
       (sum, value) =>
         sum + value,
+
       0
-    )
-    / values.length
+
+    ) /
+
+    values.length
+
   );
 
 }
 
 
-/* =========================================
-   표본 표준편차
-========================================= */
+/* =====================================================
+   표준편차
+===================================================== */
 
-function standardDeviation(values) {
+function standardDeviation(
+  values
+) {
 
   if (
-    values.length < 2
+    values.length <
+    2
   ) {
+
     return 0;
+
   }
 
 
   const avg =
-    mean(values);
+    mean(
+      values
+    );
 
 
   const variance =
+
     values.reduce(
-      (sum, value) =>
+
+      (
+        sum,
+        value
+      ) =>
+
         sum +
+
         Math.pow(
-          value - avg,
+
+          value -
+          avg,
+
           2
+
         ),
+
       0
-    )
-    /
-    (values.length - 1);
+
+    ) /
+
+    (
+      values.length -
+      1
+    );
 
 
   return Math.sqrt(
@@ -717,9 +1412,9 @@ function standardDeviation(values) {
 }
 
 
-/* =========================================
-   시간 + 농도별 그룹화
-========================================= */
+/* =====================================================
+   그룹화
+===================================================== */
 
 function createGroups() {
 
@@ -727,105 +1422,116 @@ function createGroups() {
     new Map();
 
 
-  experiments.forEach(
-    experiment => {
+  experiments
+    .forEach(
+      experiment => {
 
-      const key =
-        `${experiment.concentration}|${experiment.time}`;
+        const key =
 
+          experiment
+            .concentration +
 
-      if (!map.has(key)) {
+          "|" +
 
-        map.set(
-          key,
-          {
-            concentration:
-              experiment.concentration,
+          experiment
+            .time;
 
-            time:
-              experiment.time,
-
-            values: []
-          }
-        );
-
-      }
-
-
-      map
-        .get(key)
-        .values
-        .push(
-          experiment.coverage
-        );
-
-    }
-  );
-
-
-  return Array
-    .from(map.values())
-    .map(
-      group => ({
-
-        concentration:
-          group.concentration,
-
-        time:
-          group.time,
-
-        n:
-          group.values.length,
-
-        average:
-          mean(group.values),
-
-        sd:
-          standardDeviation(
-            group.values
-          )
-
-      })
-    )
-    .sort(
-      (a, b) => {
 
         if (
-          a.concentration !==
-          b.concentration
+          !map.has(
+            key
+          )
         ) {
 
-          return (
-            a.concentration -
-            b.concentration
+          map.set(
+
+            key,
+
+            {
+
+              concentration:
+                experiment
+                  .concentration,
+
+              time:
+                experiment
+                  .time,
+
+              values:
+                []
+
+            }
+
           );
 
         }
 
 
-        return (
-          a.time -
-          b.time
-        );
+        map
+          .get(
+            key
+          )
+          .values
+          .push(
+            experiment
+              .coverage
+          );
 
       }
+    );
+
+
+  return Array
+    .from(
+      map.values()
+    )
+    .map(
+      group => ({
+
+        concentration:
+          group
+            .concentration,
+
+        time:
+          group
+            .time,
+
+        n:
+          group
+            .values
+            .length,
+
+        average:
+          mean(
+            group
+              .values
+          ),
+
+        sd:
+          standardDeviation(
+            group
+              .values
+          )
+
+      })
     );
 
 }
 
 
-/* =========================================
+/* =====================================================
    분석
-========================================= */
+===================================================== */
 
 function analyzeExperiments() {
 
   if (
-    experiments.length < 3
+    experiments.length <
+    3
   ) {
 
     alert(
-      "분석을 위해 최소 3개의 실험 데이터를 등록해주세요."
+      "최소 3개의 실험 데이터가 필요합니다."
     );
 
     return;
@@ -862,35 +1568,43 @@ function analyzeExperiments() {
     .getElementById(
       "analysisResult"
     )
-    .classList.remove(
+    .classList
+    .remove(
       "hidden"
     );
 
 }
 
 
-/* =========================================
+/* =====================================================
    평균 테이블
-========================================= */
+===================================================== */
 
-function renderAverageTable(groups) {
+function renderAverageTable(
+  groups
+) {
 
   const body =
-    document.getElementById(
-      "averageBody"
-    );
+
+    document
+      .getElementById(
+        "averageBody"
+      );
 
 
-  body.innerHTML = "";
+  body.innerHTML =
+    "";
 
 
   groups.forEach(
     group => {
 
       const row =
-        document.createElement(
-          "tr"
-        );
+
+        document
+          .createElement(
+            "tr"
+          );
 
 
       row.innerHTML = `
@@ -920,7 +1634,10 @@ function renderAverageTable(groups) {
       `;
 
 
-      body.appendChild(row);
+      body
+        .appendChild(
+          row
+        );
 
     }
   );
@@ -928,42 +1645,65 @@ function renderAverageTable(groups) {
 }
 
 
-/* =========================================
+/* =====================================================
    그래프
-========================================= */
+===================================================== */
 
-function createExperimentChart(groups) {
+function createExperimentChart(
+  groups
+) {
 
   const concentrations =
+
     [
       ...new Set(
+
         groups.map(
-          group =>
-            group.concentration
+          g =>
+            g.concentration
         )
+
       )
     ];
 
 
   const datasets =
+
     concentrations.map(
       concentration => {
 
         const data =
+
           groups
+
             .filter(
-              group =>
-                group.concentration ===
+
+              g =>
+                g.concentration ===
                 concentration
+
             )
+
+            .sort(
+
+              (
+                a,
+                b
+              ) =>
+
+                a.time -
+                b.time
+
+            )
+
             .map(
-              group => ({
+              g => ({
 
                 x:
-                  group.time,
+                  g.time,
 
                 y:
-                  group.average
+                  g.average
 
               })
             );
@@ -978,13 +1718,14 @@ function createExperimentChart(groups) {
 
           data,
 
-          borderWidth: 2,
+          borderWidth:
+            2,
 
-          pointRadius: 5,
+          pointRadius:
+            5,
 
-          tension: 0.25,
-
-          fill: false
+          tension:
+            0.25
 
         };
 
@@ -992,7 +1733,9 @@ function createExperimentChart(groups) {
     );
 
 
-  if (chart) {
+  if (
+    chart
+  ) {
 
     chart.destroy();
 
@@ -1000,68 +1743,62 @@ function createExperimentChart(groups) {
 
 
   chart =
+
     new Chart(
+
       document
         .getElementById(
           "experimentChart"
         ),
+
       {
 
-        type: "line",
+        type:
+          "line",
 
         data: {
           datasets
         },
 
-
         options: {
 
-          responsive: true,
+          responsive:
+            true,
 
-          maintainAspectRatio: false,
-
-
-          plugins: {
-
-            title: {
-
-              display: true,
-
-              text:
-                "시간 및 효모 농도에 따른 평균 표면 부착률"
-
-            }
-
-          },
-
+          maintainAspectRatio:
+            false,
 
           scales: {
 
             x: {
 
-              type: "linear",
+              type:
+                "linear",
 
               title: {
 
-                display: true,
+                display:
+                  true,
 
                 text:
-                  "접촉 시간 (분)"
+                  "시간 (분)"
 
               }
 
             },
 
-
             y: {
 
-              beginAtZero: true,
+              beginAtZero:
+                true,
 
-              suggestedMax: 100,
+              suggestedMax:
+                100,
 
               title: {
 
-                display: true,
+                display:
+                  true,
 
                 text:
                   "표면 부착률 (%)"
@@ -1075,28 +1812,23 @@ function createExperimentChart(groups) {
         }
 
       }
+
     );
 
 }
 
 
-/* =========================================
-   다중 선형 회귀
+/* =====================================================
+   회귀 모델
+===================================================== */
 
-   coverage =
-   b0 +
-   b1 * time +
-   b2 * log10(concentration) +
-   b3 * time * log10(concentration)
-
-   단순히 농도에 비례한다고 가정하지 않고
-   시간-농도 상호작용을 포함한다.
-========================================= */
-
-function fitRegressionModel(groups) {
+function fitRegressionModel(
+  groups
+) {
 
   if (
-    groups.length < 4
+    groups.length <
+    4
   ) {
 
     return null;
@@ -1104,15 +1836,19 @@ function fitRegressionModel(groups) {
   }
 
 
-  const X = [];
+  const X =
+    [];
 
-  const Y = [];
+
+  const Y =
+    [];
 
 
   groups.forEach(
     group => {
 
       const logC =
+
         Math.log10(
           group.concentration
         );
@@ -1126,7 +1862,8 @@ function fitRegressionModel(groups) {
 
         logC,
 
-        group.time * logC
+        group.time *
+        logC
 
       ]);
 
@@ -1139,140 +1876,123 @@ function fitRegressionModel(groups) {
   );
 
 
-  try {
-
-    const Xt =
-      transpose(X);
-
-
-    const XtX =
-      multiplyMatrices(
-        Xt,
-        X
-      );
+  const Xt =
+    transpose(
+      X
+    );
 
 
-    /*
-       아주 작은 ridge 값을 추가해
-       특이행렬 문제를 완화한다.
-    */
+  const XtX =
+    multiplyMatrices(
+      Xt,
+      X
+    );
 
-    const lambda =
+
+  for (
+    let i = 0;
+    i < XtX.length;
+    i++
+  ) {
+
+    XtX[i][i] +=
       1e-8;
-
-
-    for (
-      let i = 0;
-      i < XtX.length;
-      i++
-    ) {
-
-      XtX[i][i] +=
-        lambda;
-
-    }
-
-
-    const inverse =
-      invertMatrix(
-        XtX
-      );
-
-
-    if (!inverse) {
-
-      return null;
-
-    }
-
-
-    const XtY =
-      multiplyMatrixVector(
-        Xt,
-        Y
-      );
-
-
-    const beta =
-      multiplyMatrixVector(
-        inverse,
-        XtY
-      );
-
-
-    return {
-
-      beta,
-
-      minTime:
-        Math.min(
-          ...groups.map(
-            group =>
-              group.time
-          )
-        ),
-
-      maxTime:
-        Math.max(
-          ...groups.map(
-            group =>
-              group.time
-          )
-        ),
-
-      minConcentration:
-        Math.min(
-          ...groups.map(
-            group =>
-              group.concentration
-          )
-        ),
-
-      maxConcentration:
-        Math.max(
-          ...groups.map(
-            group =>
-              group.concentration
-          )
-        )
-
-    };
 
   }
 
-  catch (error) {
+
+  const inverse =
+    invertMatrix(
+      XtX
+    );
+
+
+  if (
+    !inverse
+  ) {
 
     return null;
 
   }
 
+
+  const XtY =
+    multiplyMatrixVector(
+      Xt,
+      Y
+    );
+
+
+  const beta =
+    multiplyMatrixVector(
+      inverse,
+      XtY
+    );
+
+
+  return {
+
+    beta,
+
+    minTime:
+      Math.min(
+        ...groups.map(
+          g => g.time
+        )
+      ),
+
+    maxTime:
+      Math.max(
+        ...groups.map(
+          g => g.time
+        )
+      ),
+
+    minConcentration:
+      Math.min(
+        ...groups.map(
+          g =>
+            g.concentration
+        )
+      ),
+
+    maxConcentration:
+      Math.max(
+        ...groups.map(
+          g =>
+            g.concentration
+        )
+      )
+
+  };
+
 }
 
 
-/* =========================================
+/* =====================================================
    예측
-========================================= */
+===================================================== */
 
 function predictCoverage() {
 
-  if (!fittedModel) {
-
-    const groups =
-      createGroups();
-
+  if (
+    !fittedModel
+  ) {
 
     fittedModel =
       fitRegressionModel(
-        groups
+        createGroups()
       );
 
   }
 
 
-  if (!fittedModel) {
+  if (
+    !fittedModel
+  ) {
 
     alert(
-      "예측 모델을 만들 데이터가 부족합니다. 서로 다른 시간과 농도의 데이터를 더 입력해주세요."
+      "예측을 위한 데이터가 부족합니다."
     );
 
     return;
@@ -1281,54 +2001,48 @@ function predictCoverage() {
 
 
   const time =
+
     Number(
+
       document
         .getElementById(
           "predictionTime"
         )
         .value
+
     );
 
 
   const coefficient =
+
     Number(
+
       document
         .getElementById(
           "predictionCoefficient"
         )
         .value
+
     );
 
 
   const exponent =
+
     Number(
+
       document
         .getElementById(
           "predictionExponent"
         )
         .value
+
     );
-
-
-  if (
-    !Number.isFinite(time) ||
-    time < 0 ||
-    !Number.isFinite(coefficient) ||
-    coefficient <= 0 ||
-    !Number.isFinite(exponent)
-  ) {
-
-    alert(
-      "예측 시간과 농도를 올바르게 입력해주세요."
-    );
-
-    return;
-
-  }
 
 
   const concentration =
+
     coefficient *
+
     Math.pow(
       10,
       exponent
@@ -1336,75 +2050,80 @@ function predictCoverage() {
 
 
   const logC =
+
     Math.log10(
       concentration
     );
 
 
-  const beta =
+  const b =
     fittedModel.beta;
 
 
   let prediction =
 
-    beta[0] +
+    b[0] +
 
-    beta[1] * time +
+    b[1] *
+    time +
 
-    beta[2] * logC +
+    b[2] *
+    logC +
 
-    beta[3] *
-      time *
-      logC;
+    b[3] *
+    time *
+    logC;
 
-
-  /*
-     피복률의 물리적 범위
-     0 ~ 100%로 제한
-  */
 
   prediction =
+
     Math.max(
+
       0,
+
       Math.min(
         100,
         prediction
       )
+
     );
 
 
-  const outsideTime =
+  const outside =
+
     time <
       fittedModel.minTime ||
+
     time >
-      fittedModel.maxTime;
+      fittedModel.maxTime ||
 
-
-  const outsideConcentration =
     concentration <
       fittedModel.minConcentration ||
+
     concentration >
       fittedModel.maxConcentration;
 
 
   let explanation =
-    `입력된 실험 데이터의 시간과 농도, 그리고 두 변수의 상호작용을 이용한 회귀 모델로 계산했습니다.`;
+
+    "시간, 농도 및 두 변수의 상호작용을 이용한 회귀 모델로 계산했습니다.";
 
 
   if (
-    outsideTime ||
-    outsideConcentration
+    outside
   ) {
 
     explanation +=
-      " 현재 조건은 실험 데이터 범위를 벗어난 외삽이 포함되어 있으므로 결과의 불확실성이 더 큽니다.";
+
+      " 입력 조건이 기존 실험 범위를 벗어나 있으므로 외삽 예측이며 불확실성이 큽니다.";
 
   }
 
   else {
 
     explanation +=
-      " 현재 입력 조건은 기존 실험 데이터의 범위 안에 있습니다.";
+
+      " 입력 조건은 기존 실험 데이터 범위 안에 있습니다.";
 
   }
 
@@ -1414,7 +2133,12 @@ function predictCoverage() {
       "predictionValue"
     )
     .textContent =
-    prediction.toFixed(2) +
+
+    prediction
+      .toFixed(
+        2
+      ) +
+
     "%";
 
 
@@ -1423,6 +2147,7 @@ function predictCoverage() {
       "predictionExplanation"
     )
     .textContent =
+
     explanation;
 
 
@@ -1430,29 +2155,38 @@ function predictCoverage() {
     .getElementById(
       "predictionResult"
     )
-    .classList.remove(
+    .classList
+    .remove(
       "hidden"
     );
 
 }
 
 
-/* =========================================
+/* =====================================================
    모델 설명
-========================================= */
+===================================================== */
 
-function renderModelDescription(model) {
+function renderModelDescription(
+  model
+) {
 
   const element =
-    document.getElementById(
-      "modelDescription"
-    );
+
+    document
+      .getElementById(
+        "modelDescription"
+      );
 
 
-  if (!model) {
+  if (
+    !model
+  ) {
 
     element.textContent =
-      "현재 데이터만으로는 시간과 농도를 동시에 고려하는 모델을 안정적으로 계산하기 어렵습니다. 서로 다른 시간과 농도 조건의 데이터를 추가해주세요.";
+
+      "현재 데이터만으로 안정적인 예측식을 만들기 어렵습니다. 서로 다른 시간과 농도 조건의 데이터를 더 입력해주세요.";
+
 
     return;
 
@@ -1465,39 +2199,39 @@ function renderModelDescription(model) {
 
   element.innerHTML = `
 
-    현재 프로그램은 다음 탐색적 회귀식을 사용합니다.
+    현재 프로그램은 시간과 농도를 동시에 고려하는 회귀식을 사용합니다.
 
     <br><br>
 
     <strong>
+
       부착률 =
       ${b[0].toFixed(4)}
       ${signed(b[1])} × 시간
       ${signed(b[2])} × log₁₀(농도)
       ${signed(b[3])} × 시간 × log₁₀(농도)
+
     </strong>
-
-    <br><br>
-
-    마지막 항은 시간과 농도의 상호작용을 나타냅니다.
-    따라서 농도의 영향이 모든 시간에서 동일하다고 단순 가정하지 않습니다.
 
   `;
 
 }
 
 
-/* =========================================
-   부호 표시
-========================================= */
+function signed(
+  value
+) {
 
-function signed(value) {
-
-  if (value >= 0) {
+  if (
+    value >=
+    0
+  ) {
 
     return (
       "+ " +
-      value.toFixed(4)
+      value.toFixed(
+        4
+      )
     );
 
   }
@@ -1505,25 +2239,29 @@ function signed(value) {
 
   return (
     "- " +
-    Math.abs(value)
-      .toFixed(4)
+    Math.abs(
+      value
+    ).toFixed(
+      4
+    )
   );
 
 }
 
 
-/* =========================================
+/* =====================================================
    CSV
-========================================= */
+===================================================== */
 
 function downloadCSV() {
 
   if (
-    experiments.length === 0
+    experiments.length ===
+    0
   ) {
 
     alert(
-      "저장할 실험 데이터가 없습니다."
+      "저장할 데이터가 없습니다."
     );
 
     return;
@@ -1532,39 +2270,57 @@ function downloadCSV() {
 
 
   let csv =
+
     "\uFEFF번호,시간(분),농도(cells/mL),표면부착률(%)\n";
 
 
   experiments.forEach(
-    (experiment, index) => {
+
+    (
+      experiment,
+      index
+    ) => {
 
       csv +=
+
         `${index + 1},` +
+
         `${experiment.time},` +
+
         `${experiment.concentration},` +
+
         `${experiment.coverage}\n`;
 
     }
+
   );
 
 
   const blob =
+
     new Blob(
+
       [csv],
+
       {
+
         type:
           "text/csv;charset=utf-8"
+
       }
+
     );
 
 
   const url =
+
     URL.createObjectURL(
       blob
     );
 
 
   const link =
+
     document.createElement(
       "a"
     );
@@ -1573,21 +2329,13 @@ function downloadCSV() {
   link.href =
     url;
 
+
   link.download =
+
     "yeast_attachment_data.csv";
 
 
-  document
-    .body
-    .appendChild(
-      link
-    );
-
-
   link.click();
-
-
-  link.remove();
 
 
   URL.revokeObjectURL(
@@ -1597,37 +2345,60 @@ function downloadCSV() {
 }
 
 
-/* =========================================
-   행렬 계산
-========================================= */
+/* =====================================================
+   행렬 함수
+===================================================== */
 
-function transpose(matrix) {
+function transpose(
+  matrix
+) {
 
   return matrix[0].map(
+
     (_, column) =>
+
       matrix.map(
         row =>
           row[column]
       )
+
   );
 
 }
 
 
-function multiplyMatrices(A, B) {
+function multiplyMatrices(
+  A,
+  B
+) {
 
   return A.map(
+
     row =>
+
       B[0].map(
+
         (_, column) =>
+
           row.reduce(
-            (sum, value, index) =>
+
+            (
+              sum,
+              value,
+              index
+            ) =>
+
               sum +
+
               value *
               B[index][column],
+
             0
+
           )
+
       )
+
   );
 
 }
@@ -1639,45 +2410,70 @@ function multiplyMatrixVector(
 ) {
 
   return matrix.map(
+
     row =>
+
       row.reduce(
-        (sum, value, index) =>
+
+        (
+          sum,
+          value,
+          index
+        ) =>
+
           sum +
+
           value *
           vector[index],
+
         0
+
       )
+
   );
 
 }
 
 
-/* =========================================
-   Gauss-Jordan 역행렬
-========================================= */
-
-function invertMatrix(matrix) {
+function invertMatrix(
+  matrix
+) {
 
   const n =
     matrix.length;
 
 
   const augmented =
+
     matrix.map(
-      (row, i) => [
+
+      (
+        row,
+        i
+      ) => [
 
         ...row,
 
-        ...Array
-          .from(
-            { length: n },
-            (_, j) =>
-              i === j
-                ? 1
-                : 0
-          )
+        ...Array.from(
+
+          {
+            length:
+              n
+          },
+
+          (
+            _,
+            j
+          ) =>
+
+            i === j
+              ? 1
+              : 0
+
+        )
 
       ]
+
     );
 
 
@@ -1692,22 +2488,28 @@ function invertMatrix(matrix) {
 
 
     for (
-      let r = i + 1;
+      let r =
+        i + 1;
       r < n;
       r++
     ) {
 
       if (
+
         Math.abs(
           augmented[r][i]
         )
+
         >
+
         Math.abs(
           augmented[pivotRow][i]
         )
+
       ) {
 
-        pivotRow = r;
+        pivotRow =
+          r;
 
       }
 
@@ -1715,10 +2517,14 @@ function invertMatrix(matrix) {
 
 
     if (
+
       Math.abs(
         augmented[pivotRow][i]
       )
-      < 1e-12
+
+      <
+      1e-12
+
     ) {
 
       return null;
@@ -1730,6 +2536,7 @@ function invertMatrix(matrix) {
       augmented[i],
       augmented[pivotRow]
     ] =
+
     [
       augmented[pivotRow],
       augmented[i]
@@ -1737,6 +2544,7 @@ function invertMatrix(matrix) {
 
 
     const pivot =
+
       augmented[i][i];
 
 
@@ -1747,6 +2555,7 @@ function invertMatrix(matrix) {
     ) {
 
       augmented[i][j] /=
+
         pivot;
 
     }
@@ -1758,10 +2567,17 @@ function invertMatrix(matrix) {
       r++
     ) {
 
-      if (r === i) continue;
+      if (
+        r === i
+      ) {
+
+        continue;
+
+      }
 
 
       const factor =
+
         augmented[r][i];
 
 
@@ -1772,6 +2588,7 @@ function invertMatrix(matrix) {
       ) {
 
         augmented[r][j] -=
+
           factor *
           augmented[i][j];
 
@@ -1783,15 +2600,19 @@ function invertMatrix(matrix) {
 
 
   return augmented.map(
+
     row =>
-      row.slice(n)
+      row.slice(
+        n
+      )
+
   );
 
 }
 
 
-/* =========================================
+/* =====================================================
    시작
-========================================= */
+===================================================== */
 
 loadExperiments();
