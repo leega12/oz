@@ -86,7 +86,7 @@
         </h3>
 
         <p class="canvas-guide">
-          사진에서 배지의 중심을 클릭하세요.
+          사진에서 배지의 중심을 클릭하거나 드래그하세요.
         </p>
 
         <canvas id="originalCanvas"></canvas>
@@ -111,7 +111,7 @@
     </div>
 
 
-    <!-- 원형 분석 영역 설정 -->
+    <!-- ROI 설정 -->
 
     <div
       id="roiArea"
@@ -128,7 +128,7 @@
         <div class="slider-info">
 
           <span>
-            배지 반지름
+            배지 전체 반지름
           </span>
 
           <strong id="radiusValue">
@@ -154,11 +154,11 @@
         <div class="slider-info">
 
           <span>
-            테두리 제외
+            배지 가장자리 제외
           </span>
 
           <strong id="marginValue">
-            10%
+            20%
           </strong>
 
         </div>
@@ -168,18 +168,31 @@
           type="range"
           id="marginSlider"
           min="0"
-          max="30"
-          value="10"
+          max="45"
+          value="20"
         >
 
       </div>
+
+
+      <label class="check-option">
+
+        <input
+          type="checkbox"
+          id="removeBoundary"
+          checked
+        >
+
+        분석 영역 가장자리와 연결된 흰색 구조 자동 제거
+
+      </label>
 
 
       <div class="roi-explanation">
 
         <div class="legend-item">
           <span class="legend-circle outer"></span>
-          배지 경계
+          배지 외곽
         </div>
 
         <div class="legend-item">
@@ -190,9 +203,19 @@
       </div>
 
 
+      <div class="center-info">
+
+        현재 배지 중심:
+        <strong id="centerPosition">
+          자동 설정
+        </strong>
+
+      </div>
+
+
       <p class="helper">
-        배지의 하얀 플라스틱 테두리가 효모로 잘못 인식되는 것을 막기 위해
-        바깥쪽 영역을 자동으로 제외합니다.
+        빨간 원은 배지 전체 범위, 청록색 원은 실제 분석 영역입니다.
+        하얀 플라스틱 테두리를 제외하려면 청록색 원이 배지 안쪽에 오도록 조절하세요.
       </p>
 
     </div>
@@ -239,11 +262,12 @@
         >
 
         밝은 영역을 효모로 인식
+
       </label>
 
 
       <p class="helper">
-        오른쪽 분석 이미지에서 흰색으로 표시되는 부분만 효모 영역으로 계산됩니다.
+        오른쪽 분석 이미지에서 흰색으로 표시되는 영역만 효모 영역으로 계산됩니다.
       </p>
 
     </div>
@@ -374,7 +398,7 @@
 
 
   <!-- ================================================= -->
-  <!-- 03 데이터 -->
+  <!-- 03 실험 데이터 -->
   <!-- ================================================= -->
 
   <section class="card">
