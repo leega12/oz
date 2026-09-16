@@ -2,6 +2,11 @@
    Yeast Attachment Lab
 ===================================================== */
 
+
+/* =====================================================
+   GLOBAL VARIABLES
+===================================================== */
+
 let currentCoverage = null;
 
 let experiments = [];
@@ -11,34 +16,32 @@ let chart = null;
 let fittedModel = null;
 
 
-/*
-배지 ROI 정보
-*/
+/* ROI */
 
 let roiCenterX = null;
-
 let roiCenterY = null;
 
 let originalImageData = null;
 
+let draggingCenter = false;
+
+
+/* CANVAS */
 
 const originalCanvas =
   document.getElementById(
     "originalCanvas"
   );
 
-
 const processedCanvas =
   document.getElementById(
     "processedCanvas"
   );
 
-
 const originalCtx =
   originalCanvas.getContext(
     "2d"
   );
-
 
 const processedCtx =
   processedCanvas.getContext(
@@ -47,7 +50,7 @@ const processedCtx =
 
 
 /* =====================================================
-   이미지 업로드
+   IMAGE UPLOAD
 ===================================================== */
 
 document
@@ -66,11 +69,7 @@ function handleImageUpload(event) {
     event.target.files[0];
 
 
-  if (!file) {
-
-    return;
-
-  }
+  if (!file) return;
 
 
   const reader =
@@ -94,7 +93,6 @@ function handleImageUpload(event) {
           let width =
             img.width;
 
-
           let height =
             img.height;
 
@@ -112,7 +110,6 @@ function handleImageUpload(event) {
             width =
               MAX_WIDTH;
 
-
             height =
               height *
               ratio;
@@ -125,7 +122,6 @@ function handleImageUpload(event) {
               width
             );
 
-
           height =
             Math.round(
               height
@@ -135,7 +131,6 @@ function handleImageUpload(event) {
           originalCanvas.width =
             width;
 
-
           originalCanvas.height =
             height;
 
@@ -143,48 +138,35 @@ function handleImageUpload(event) {
           processedCanvas.width =
             width;
 
-
           processedCanvas.height =
             height;
 
 
           originalCtx.drawImage(
-
             img,
-
             0,
-
             0,
-
             width,
-
             height
-
           );
 
 
           originalImageData =
             originalCtx.getImageData(
-
               0,
-
               0,
-
               width,
-
               height
-
             );
 
 
           /*
-          처음에는 이미지 중심을
-          기본 ROI 중심으로 설정
+           처음에는 이미지 중앙을
+           기본 배지 중심으로 설정
           */
 
           roiCenterX =
             width / 2;
-
 
           roiCenterY =
             height / 2;
@@ -192,6 +174,7 @@ function handleImageUpload(event) {
 
           showImageControls();
 
+          updateCenterText();
 
           analyzeImage();
 
@@ -212,7 +195,7 @@ function handleImageUpload(event) {
 
 
 /* =====================================================
-   UI 표시
+   UI
 ===================================================== */
 
 function showImageControls() {
@@ -260,53 +243,114 @@ function showImageControls() {
 
 
 /* =====================================================
-   사진 클릭 → 배지 중심 지정
+   ROI CENTER SELECTION
 ===================================================== */
 
 originalCanvas
   .addEventListener(
-    "click",
+    "pointerdown",
     function(event) {
 
-      if (
-        !originalImageData
-      ) {
+      draggingCenter =
+        true;
 
-        return;
+
+      try {
+
+        originalCanvas
+          .setPointerCapture(
+            event.pointerId
+          );
 
       }
 
+      catch (error) {}
 
-      const rect =
+
+      updateCenterFromPointer(
+        event
+      );
+
+    }
+  );
+
+
+originalCanvas
+  .addEventListener(
+    "pointermove",
+    function(event) {
+
+      if (
+        !draggingCenter
+      ) {
+        return;
+      }
+
+
+      updateCenterFromPointer(
+        event
+      );
+
+    }
+  );
+
+
+originalCanvas
+  .addEventListener(
+    "pointerup",
+    function(event) {
+
+      draggingCenter =
+        false;
+
+
+      try {
+
         originalCanvas
-          .getBoundingClientRect();
+          .releasePointerCapture(
+            event.pointerId
+          );
+
+      }
+
+      catch (error) {}
+
+    }
+  );
 
 
-      const scaleX =
-        originalCanvas.width /
-        rect.width;
+originalCanvas
+  .addEventListener(
+    "pointercancel",
+    function() {
+
+      draggingCenter =
+        false;
+
+    }
+  );
 
 
-      const scaleY =
-        originalCanvas.height /
-        rect.height;
+processedCanvas
+  .addEventListener(
+    "pointerdown",
+    function(event) {
+
+      const position =
+        getCanvasPointerPosition(
+          processedCanvas,
+          event
+        );
 
 
       roiCenterX =
-        (
-          event.clientX -
-          rect.left
-        ) *
-        scaleX;
-
+        position.x;
 
       roiCenterY =
-        (
-          event.clientY -
-          rect.top
-        ) *
-        scaleY;
+        position.y;
 
+
+      updateCenterText();
 
       analyzeImage();
 
@@ -314,8 +358,114 @@ originalCanvas
   );
 
 
+function updateCenterFromPointer(
+  event
+) {
+
+  const position =
+    getCanvasPointerPosition(
+      originalCanvas,
+      event
+    );
+
+
+  roiCenterX =
+    position.x;
+
+  roiCenterY =
+    position.y;
+
+
+  updateCenterText();
+
+  analyzeImage();
+
+}
+
+
+function getCanvasPointerPosition(
+  canvas,
+  event
+) {
+
+  const rect =
+    canvas
+      .getBoundingClientRect();
+
+
+  const scaleX =
+    canvas.width /
+    rect.width;
+
+
+  const scaleY =
+    canvas.height /
+    rect.height;
+
+
+  return {
+
+    x:
+      Math.max(
+        0,
+        Math.min(
+          canvas.width,
+          (
+            event.clientX -
+            rect.left
+          ) *
+          scaleX
+        )
+      ),
+
+    y:
+      Math.max(
+        0,
+        Math.min(
+          canvas.height,
+          (
+            event.clientY -
+            rect.top
+          ) *
+          scaleY
+        )
+      )
+
+  };
+
+}
+
+
+function updateCenterText() {
+
+  const element =
+    document
+      .getElementById(
+        "centerPosition"
+      );
+
+
+  if (
+    !element ||
+    roiCenterX === null ||
+    roiCenterY === null
+  ) {
+
+    return;
+
+  }
+
+
+  element.textContent =
+
+    `X ${Math.round(roiCenterX)}, ` +
+    `Y ${Math.round(roiCenterY)}`;
+
+}
+
+
 /* =====================================================
-   Slider events
+   CONTROL EVENTS
 ===================================================== */
 
 document
@@ -396,8 +546,18 @@ document
   );
 
 
+document
+  .getElementById(
+    "removeBoundary"
+  )
+  .addEventListener(
+    "change",
+    analyzeImage
+  );
+
+
 /* =====================================================
-   이미지 분석
+   IMAGE ANALYSIS
 ===================================================== */
 
 function analyzeImage() {
@@ -419,17 +579,6 @@ function analyzeImage() {
     originalCanvas.height;
 
 
-  /*
-  ROI 최대 반지름 기준
-  */
-
-  const minDimension =
-    Math.min(
-      width,
-      height
-    );
-
-
   const radiusPercent =
     Number(
       document
@@ -440,44 +589,13 @@ function analyzeImage() {
     );
 
 
-  const rimMargin =
+  const marginPercent =
     Number(
       document
         .getElementById(
           "marginSlider"
         )
         .value
-    );
-
-
-  const outerRadius =
-
-    minDimension *
-
-    (
-      radiusPercent /
-      100
-    );
-
-
-  /*
-  실제 분석 반지름
-
-  예:
-  outer radius = 100
-  margin = 10%
-
-  → inner radius = 90
-  */
-
-  const innerRadius =
-
-    outerRadius *
-
-    (
-      1 -
-      rimMargin /
-      100
     );
 
 
@@ -492,7 +610,6 @@ function analyzeImage() {
 
 
   const brightIsYeast =
-
     document
       .getElementById(
         "invertThreshold"
@@ -500,32 +617,71 @@ function analyzeImage() {
       .checked;
 
 
-  const pixels =
+  const removeBoundary =
+    document
+      .getElementById(
+        "removeBoundary"
+      )
+      .checked;
+
+
+  /*
+   전체 배지 반지름
+  */
+
+  const outerRadius =
+
+    Math.min(
+      width,
+      height
+    ) *
+
+    radiusPercent /
+    100;
+
+
+  /*
+   실제 분석 반지름
+  */
+
+  const analysisRadius =
+
+    outerRadius *
+
+    (
+      1 -
+      marginPercent /
+      100
+    );
+
+
+  const source =
     originalImageData.data;
 
 
-  const output =
-    processedCtx
-      .createImageData(
+  /*
+   mask 값
 
-        width,
+   0 = 배경
+   1 = 효모 후보
+   2 = ROI 밖
+  */
 
-        height
-
-      );
-
-
-  const result =
-    output.data;
-
-
-  let attachedPixels =
-    0;
+  const mask =
+    new Uint8Array(
+      width *
+      height
+    );
 
 
   let roiPixels =
     0;
 
+
+  /* =========================================
+     STEP 1
+     Threshold
+  ========================================= */
 
   for (
     let y = 0;
@@ -539,17 +695,16 @@ function analyzeImage() {
       x++
     ) {
 
-      const index =
-        (
-          y *
-          width +
-          x
-        ) * 4;
+      const pixelIndex =
+        y *
+        width +
+        x;
 
 
-      /*
-      중심으로부터 거리
-      */
+      const sourceIndex =
+        pixelIndex *
+        4;
+
 
       const dx =
         x -
@@ -561,45 +716,21 @@ function analyzeImage() {
         roiCenterY;
 
 
-      const distance =
-
-        Math.sqrt(
-
-          dx * dx +
-
-          dy * dy
-
-        );
+      const distanceSquared =
+        dx *
+        dx +
+        dy *
+        dy;
 
 
-      /*
-      실제 분석 영역 내부인가?
-      */
+      if (
+        distanceSquared >
+        analysisRadius *
+        analysisRadius
+      ) {
 
-      const insideROI =
-
-        distance <=
-        innerRadius;
-
-
-      if (!insideROI) {
-
-        /*
-        분석 대상이 아닌 픽셀은
-        어두운 회색으로 표시
-        */
-
-        result[index] =
-          35;
-
-        result[index + 1] =
-          35;
-
-        result[index + 2] =
-          35;
-
-        result[index + 3] =
-          255;
+        mask[pixelIndex] =
+          2;
 
 
         continue;
@@ -611,132 +742,250 @@ function analyzeImage() {
 
 
       const red =
-        pixels[index];
+        source[
+          sourceIndex
+        ];
 
 
       const green =
-        pixels[index + 1];
+        source[
+          sourceIndex +
+          1
+        ];
 
 
       const blue =
-        pixels[index + 2];
+        source[
+          sourceIndex +
+          2
+        ];
 
 
       /*
-      밝기 계산
+       RGB 밝기 계산
       */
 
       const brightness =
 
-        0.299 * red +
+        0.299 *
+        red +
 
-        0.587 * green +
+        0.587 *
+        green +
 
-        0.114 * blue;
+        0.114 *
+        blue;
 
 
-      let yeast;
+      const yeastCandidate =
 
-
-      if (
         brightIsYeast
-      ) {
 
-        yeast =
+          ?
 
           brightness >=
-          threshold;
+          threshold
 
-      }
-
-      else {
-
-        yeast =
+          :
 
           brightness <=
           threshold;
 
-      }
 
+      mask[pixelIndex] =
 
-      if (yeast) {
-
-        attachedPixels++;
-
-
-        /*
-        효모 영역 = 흰색
-        */
-
-        result[index] =
-          255;
-
-        result[index + 1] =
-          255;
-
-        result[index + 2] =
-          255;
-
-      }
-
-      else {
-
-        /*
-        배경 영역 = 검정
-        */
-
-        result[index] =
+        yeastCandidate
+          ?
+          1
+          :
           0;
-
-        result[index + 1] =
-          0;
-
-        result[index + 2] =
-          0;
-
-      }
-
-
-      result[index + 3] =
-        255;
 
     }
 
   }
 
 
-  processedCtx.putImageData(
-
-    output,
-
-    0,
-
-    0
-
-  );
-
+  /* =========================================
+     STEP 2
+     분석 원의 가장자리에 연결된
+     흰 구조 제거
+  ========================================= */
 
   if (
-    roiPixels >
-    0
+    removeBoundary
   ) {
 
-    currentCoverage =
+    removeBoundaryConnectedComponents(
+
+      mask,
+
+      width,
+
+      height,
+
+      analysisRadius
+
+    );
+
+  }
+
+
+  /* =========================================
+     STEP 3
+     RESULT IMAGE
+  ========================================= */
+
+  const output =
+    processedCtx
+      .createImageData(
+        width,
+        height
+      );
+
+
+  const outputPixels =
+    output.data;
+
+
+  let attachedPixels =
+    0;
+
+
+  for (
+    let i = 0;
+    i < mask.length;
+    i++
+  ) {
+
+    const outputIndex =
+      i *
+      4;
+
+
+    if (
+      mask[i] ===
+      2
+    ) {
+
+      /*
+       ROI 밖
+      */
+
+      outputPixels[
+        outputIndex
+      ] =
+        25;
+
+
+      outputPixels[
+        outputIndex +
+        1
+      ] =
+        28;
+
+
+      outputPixels[
+        outputIndex +
+        2
+      ] =
+        32;
+
+    }
+
+    else if (
+      mask[i] ===
+      1
+    ) {
+
+      /*
+       효모
+      */
+
+      attachedPixels++;
+
+
+      outputPixels[
+        outputIndex
+      ] =
+        255;
+
+
+      outputPixels[
+        outputIndex +
+        1
+      ] =
+        255;
+
+
+      outputPixels[
+        outputIndex +
+        2
+      ] =
+        255;
+
+    }
+
+    else {
+
+      /*
+       배경
+      */
+
+      outputPixels[
+        outputIndex
+      ] =
+        0;
+
+
+      outputPixels[
+        outputIndex +
+        1
+      ] =
+        0;
+
+
+      outputPixels[
+        outputIndex +
+        2
+      ] =
+        0;
+
+    }
+
+
+    outputPixels[
+      outputIndex +
+      3
+    ] =
+      255;
+
+  }
+
+
+  processedCtx
+    .putImageData(
+      output,
+      0,
+      0
+    );
+
+
+  currentCoverage =
+
+    roiPixels >
+    0
+
+      ?
 
       (
         attachedPixels /
         roiPixels
       ) *
-      100;
+      100
 
-  }
+      :
 
-  else {
-
-    currentCoverage =
       0;
-
-  }
 
 
   document
@@ -749,6 +998,7 @@ function analyzeImage() {
       .toFixed(
         2
       ) +
+
     "%";
 
 
@@ -758,50 +1008,374 @@ function analyzeImage() {
     )
     .textContent =
 
-    attachedPixels
-      .toLocaleString() +
+    `${attachedPixels.toLocaleString()} / ` +
 
-    " / " +
-
-    roiPixels
-      .toLocaleString() +
-
-    " pixels";
+    `${roiPixels.toLocaleString()} pixels`;
 
 
   drawROIOverlay(
-
     outerRadius,
-
-    innerRadius
-
+    analysisRadius
   );
 
 }
 
 
 /* =====================================================
-   ROI 표시
+   REMOVE BOUNDARY CONNECTED COMPONENTS
+===================================================== */
+
+function removeBoundaryConnectedComponents(
+  mask,
+  width,
+  height,
+  radius
+) {
+
+  const total =
+    width *
+    height;
+
+
+  const visited =
+    new Uint8Array(
+      total
+    );
+
+
+  const queue =
+    new Int32Array(
+      total
+    );
+
+
+  let queueStart =
+    0;
+
+
+  let queueEnd =
+    0;
+
+
+  /*
+   분석 원의 경계 몇 픽셀 안쪽
+   */
+
+  const boundaryThickness =
+
+    Math.max(
+
+      4,
+
+      radius *
+      0.035
+
+    );
+
+
+  const minimumRadius =
+
+    Math.max(
+
+      0,
+
+      radius -
+      boundaryThickness
+
+    );
+
+
+  const minRadiusSquared =
+
+    minimumRadius *
+    minimumRadius;
+
+
+  const maxRadiusSquared =
+
+    radius *
+    radius;
+
+
+  const minX =
+
+    Math.max(
+
+      0,
+
+      Math.floor(
+
+        roiCenterX -
+        radius
+
+      )
+
+    );
+
+
+  const maxX =
+
+    Math.min(
+
+      width -
+      1,
+
+      Math.ceil(
+
+        roiCenterX +
+        radius
+
+      )
+
+    );
+
+
+  const minY =
+
+    Math.max(
+
+      0,
+
+      Math.floor(
+
+        roiCenterY -
+        radius
+
+      )
+
+    );
+
+
+  const maxY =
+
+    Math.min(
+
+      height -
+      1,
+
+      Math.ceil(
+
+        roiCenterY +
+        radius
+
+      )
+
+    );
+
+
+  /*
+   경계 부분에서 효모 후보인 픽셀을
+   BFS 시작점으로 등록
+  */
+
+  for (
+    let y = minY;
+    y <= maxY;
+    y++
+  ) {
+
+    for (
+      let x = minX;
+      x <= maxX;
+      x++
+    ) {
+
+      const dx =
+        x -
+        roiCenterX;
+
+
+      const dy =
+        y -
+        roiCenterY;
+
+
+      const distanceSquared =
+
+        dx *
+        dx +
+
+        dy *
+        dy;
+
+
+      if (
+        distanceSquared <
+        minRadiusSquared ||
+        distanceSquared >
+        maxRadiusSquared
+      ) {
+
+        continue;
+
+      }
+
+
+      const index =
+        y *
+        width +
+        x;
+
+
+      if (
+        mask[index] ===
+        1 &&
+        !visited[index]
+      ) {
+
+        visited[index] =
+          1;
+
+
+        queue[
+          queueEnd++
+        ] =
+          index;
+
+      }
+
+    }
+
+  }
+
+
+  const directions = [
+
+    [-1, 0],
+    [1, 0],
+
+    [0, -1],
+    [0, 1],
+
+    [-1, -1],
+    [1, -1],
+
+    [-1, 1],
+    [1, 1]
+
+  ];
+
+
+  while (
+    queueStart <
+    queueEnd
+  ) {
+
+    const index =
+      queue[
+        queueStart++
+      ];
+
+
+    /*
+     경계에 연결된 흰 영역 제거
+    */
+
+    mask[index] =
+      0;
+
+
+    const x =
+      index %
+      width;
+
+
+    const y =
+      Math.floor(
+        index /
+        width
+      );
+
+
+    for (
+      const [
+        dx,
+        dy
+      ]
+      of directions
+    ) {
+
+      const nx =
+        x +
+        dx;
+
+
+      const ny =
+        y +
+        dy;
+
+
+      if (
+        nx <
+        0 ||
+        nx >=
+        width ||
+        ny <
+        0 ||
+        ny >=
+        height
+      ) {
+
+        continue;
+
+      }
+
+
+      const next =
+
+        ny *
+        width +
+
+        nx;
+
+
+      if (
+        mask[next] ===
+        1 &&
+        !visited[next]
+      ) {
+
+        visited[next] =
+          1;
+
+
+        queue[
+          queueEnd++
+        ] =
+          next;
+
+      }
+
+    }
+
+  }
+
+}
+
+
+/* =====================================================
+   DRAW ROI OVERLAY
 ===================================================== */
 
 function drawROIOverlay(
   outerRadius,
-  innerRadius
+  analysisRadius
 ) {
 
-  /*
-  원본 이미지 복원
-  */
+  if (
+    !originalImageData
+  ) {
+
+    return;
+
+  }
+
 
   originalCtx
     .putImageData(
-
       originalImageData,
-
       0,
-
       0
-
     );
 
 
@@ -809,95 +1383,157 @@ function drawROIOverlay(
 
 
   /*
-  바깥 배지 경계
+   배지 외곽
   */
 
-  originalCtx.beginPath();
+  originalCtx
+    .beginPath();
 
 
-  originalCtx.arc(
-
-    roiCenterX,
-
-    roiCenterY,
-
-    outerRadius,
-
-    0,
-
-    Math.PI * 2
-
-  );
+  originalCtx
+    .arc(
+      roiCenterX,
+      roiCenterY,
+      outerRadius,
+      0,
+      Math.PI *
+      2
+    );
 
 
   originalCtx.strokeStyle =
-    "#ff5252";
+    "#ff4d5d";
 
 
   originalCtx.lineWidth =
-    4;
+    Math.max(
+      3,
+      originalCanvas.width /
+      250
+    );
 
 
   originalCtx.stroke();
 
 
   /*
-  실제 분석 영역
+   분석 영역
   */
 
-  originalCtx.beginPath();
+  originalCtx
+    .beginPath();
 
 
-  originalCtx.arc(
-
-    roiCenterX,
-
-    roiCenterY,
-
-    innerRadius,
-
-    0,
-
-    Math.PI * 2
-
-  );
+  originalCtx
+    .arc(
+      roiCenterX,
+      roiCenterY,
+      analysisRadius,
+      0,
+      Math.PI *
+      2
+    );
 
 
   originalCtx.strokeStyle =
-    "#30c7b6";
+    "#1be0c1";
 
 
   originalCtx.lineWidth =
-    4;
+    Math.max(
+      3,
+      originalCanvas.width /
+      250
+    );
 
 
   originalCtx.stroke();
 
 
   /*
-  중심점
+   중심 십자
   */
 
-  originalCtx.beginPath();
+  const crossSize =
+
+    Math.max(
+
+      10,
+
+      originalCanvas.width /
+      60
+
+    );
 
 
-  originalCtx.arc(
+  originalCtx.strokeStyle =
+    "#ffd632";
 
-    roiCenterX,
 
-    roiCenterY,
+  originalCtx.lineWidth =
+    3;
 
-    6,
 
-    0,
+  originalCtx
+    .beginPath();
 
-    Math.PI * 2
 
-  );
+  originalCtx
+    .moveTo(
+      roiCenterX -
+      crossSize,
+      roiCenterY
+    );
+
+
+  originalCtx
+    .lineTo(
+      roiCenterX +
+      crossSize,
+      roiCenterY
+    );
+
+
+  originalCtx
+    .moveTo(
+      roiCenterX,
+      roiCenterY -
+      crossSize
+    );
+
+
+  originalCtx
+    .lineTo(
+      roiCenterX,
+      roiCenterY +
+      crossSize
+    );
+
+
+  originalCtx.stroke();
+
+
+  /*
+   중심점
+  */
+
+  originalCtx
+    .beginPath();
+
+
+  originalCtx
+    .arc(
+      roiCenterX,
+      roiCenterY,
+      6,
+      0,
+      Math.PI *
+      2
+    );
 
 
   originalCtx.fillStyle =
-    "#ffcc33";
+    "#ffd632";
 
 
   originalCtx.fill();
@@ -909,7 +1545,7 @@ function drawROIOverlay(
 
 
 /* =====================================================
-   실험 데이터 추가
+   EXPERIMENT ADD
 ===================================================== */
 
 function addExperiment() {
@@ -971,11 +1607,12 @@ function addExperiment() {
     !Number.isFinite(
       time
     ) ||
-    time < 0
+    time <
+    0
   ) {
 
     alert(
-      "접촉 시간을 입력해주세요."
+      "접촉 시간을 올바르게 입력해주세요."
     );
 
     return;
@@ -987,11 +1624,15 @@ function addExperiment() {
     !Number.isFinite(
       coefficient
     ) ||
-    coefficient <= 0
+    coefficient <=
+    0 ||
+    !Number.isFinite(
+      exponent
+    )
   ) {
 
     alert(
-      "효모 농도를 입력해주세요."
+      "효모 농도를 올바르게 입력해주세요."
     );
 
     return;
@@ -1012,7 +1653,8 @@ function addExperiment() {
   experiments.push({
 
     id:
-      Date.now(),
+      Date.now() +
+      Math.random(),
 
     time,
 
@@ -1026,14 +1668,13 @@ function addExperiment() {
 
   saveExperiments();
 
-
   renderRawData();
 
 }
 
 
 /* =====================================================
-   데이터 표시
+   RAW DATA
 ===================================================== */
 
 function renderRawData() {
@@ -1060,9 +1701,7 @@ function renderRawData() {
       <tr class="empty-row">
 
         <td colspan="5">
-
           아직 등록된 실험 데이터가 없습니다.
-
         </td>
 
       </tr>
@@ -1075,70 +1714,68 @@ function renderRawData() {
   }
 
 
-  experiments
-    .forEach(
-      (
-        experiment,
-        index
-      ) => {
+  experiments.forEach(
 
-        const row =
+    (
+      experiment,
+      index
+    ) => {
 
-          document
-            .createElement(
-              "tr"
-            );
-
-
-        row.innerHTML = `
-
-          <td>
-            ${index + 1}
-          </td>
-
-          <td>
-            ${experiment.time}분
-          </td>
-
-          <td>
-            ${formatConcentration(
-              experiment.concentration
-            )}
-          </td>
-
-          <td>
-            ${experiment.coverage.toFixed(2)}%
-          </td>
-
-          <td>
-
-            <button
-              class="delete-button"
-              onclick="deleteExperiment(${experiment.id})"
-            >
-
-              삭제
-
-            </button>
-
-          </td>
-
-        `;
-
-
-        body
-          .appendChild(
-            row
+      const row =
+        document
+          .createElement(
+            "tr"
           );
 
-      }
-    );
+
+      row.innerHTML = `
+
+        <td>
+          ${index + 1}
+        </td>
+
+        <td>
+          ${experiment.time}분
+        </td>
+
+        <td>
+          ${formatConcentration(
+            experiment.concentration
+          )}
+        </td>
+
+        <td>
+          ${experiment.coverage.toFixed(2)}%
+        </td>
+
+        <td>
+
+          <button
+            class="delete-button"
+            onclick="deleteExperiment(${experiment.id})"
+          >
+            삭제
+          </button>
+
+        </td>
+
+      `;
+
+
+      body
+        .appendChild(
+          row
+        );
+
+    }
+
+  );
 
 }
 
 
 /* =====================================================
-   농도 표시
+   CONCENTRATION FORMAT
 ===================================================== */
 
 function formatConcentration(
@@ -1146,7 +1783,11 @@ function formatConcentration(
 ) {
 
   if (
-    value <= 0
+    !Number.isFinite(
+      value
+    ) ||
+    value <=
+    0
   ) {
 
     return "-";
@@ -1194,7 +1835,7 @@ function formatConcentration(
 
 
 /* =====================================================
-   삭제
+   DELETE
 ===================================================== */
 
 function deleteExperiment(
@@ -1203,17 +1844,15 @@ function deleteExperiment(
 
   experiments =
 
-    experiments.filter(
-
-      experiment =>
-        experiment.id !==
-        id
-
-    );
+    experiments
+      .filter(
+        experiment =>
+          experiment.id !==
+          id
+      );
 
 
   saveExperiments();
-
 
   renderRawData();
 
@@ -1232,10 +1871,15 @@ function clearExperiments() {
   }
 
 
-  if (
-    !confirm(
+  const confirmed =
+
+    confirm(
       "모든 실험 데이터를 삭제할까요?"
-    )
+    );
+
+
+  if (
+    !confirmed
   ) {
 
     return;
@@ -1253,7 +1897,6 @@ function clearExperiments() {
 
   saveExperiments();
 
-
   renderRawData();
 
 
@@ -1266,11 +1909,33 @@ function clearExperiments() {
       "hidden"
     );
 
+
+  document
+    .getElementById(
+      "predictionResult"
+    )
+    .classList
+    .add(
+      "hidden"
+    );
+
+
+  if (
+    chart
+  ) {
+
+    chart.destroy();
+
+    chart =
+      null;
+
+  }
+
 }
 
 
 /* =====================================================
-   저장
+   LOCAL STORAGE
 ===================================================== */
 
 function saveExperiments() {
@@ -1301,7 +1966,9 @@ function loadExperiments() {
         );
 
 
-    if (saved) {
+    if (
+      saved
+    ) {
 
       experiments =
         JSON.parse(
@@ -1326,7 +1993,7 @@ function loadExperiments() {
 
 
 /* =====================================================
-   평균
+   STATISTICS
 ===================================================== */
 
 function mean(
@@ -1335,14 +2002,22 @@ function mean(
 
   return (
 
-    values.reduce(
+    values
+      .reduce(
 
-      (sum, value) =>
-        sum + value,
+        (
+          sum,
+          value
+        ) =>
 
-      0
+          sum +
+          value,
 
-    ) /
+        0
+
+      )
+
+    /
 
     values.length
 
@@ -1350,10 +2025,6 @@ function mean(
 
 }
 
-
-/* =====================================================
-   표준편차
-===================================================== */
 
 function standardDeviation(
   values
@@ -1397,7 +2068,9 @@ function standardDeviation(
 
       0
 
-    ) /
+    )
+
+    /
 
     (
       values.length -
@@ -1413,7 +2086,7 @@ function standardDeviation(
 
 
 /* =====================================================
-   그룹화
+   GROUPS
 ===================================================== */
 
 function createGroups() {
@@ -1428,13 +2101,7 @@ function createGroups() {
 
         const key =
 
-          experiment
-            .concentration +
-
-          "|" +
-
-          experiment
-            .time;
+          `${experiment.concentration}|${experiment.time}`;
 
 
         if (
@@ -1514,13 +2181,47 @@ function createGroups() {
           )
 
       })
+    )
+    .sort(
+
+      (
+        a,
+        b
+      ) => {
+
+        if (
+          a.concentration !==
+          b.concentration
+        ) {
+
+          return (
+
+            a.concentration -
+
+            b.concentration
+
+          );
+
+        }
+
+
+        return (
+
+          a.time -
+
+          b.time
+
+        );
+
+      }
+
     );
 
 }
 
 
 /* =====================================================
-   분석
+   ANALYZE
 ===================================================== */
 
 function analyzeExperiments() {
@@ -1577,7 +2278,7 @@ function analyzeExperiments() {
 
 
 /* =====================================================
-   평균 테이블
+   AVERAGE TABLE
 ===================================================== */
 
 function renderAverageTable(
@@ -1596,57 +2297,58 @@ function renderAverageTable(
     "";
 
 
-  groups.forEach(
-    group => {
+  groups
+    .forEach(
+      group => {
 
-      const row =
+        const row =
 
-        document
-          .createElement(
-            "tr"
+          document
+            .createElement(
+              "tr"
+            );
+
+
+        row.innerHTML = `
+
+          <td>
+            ${formatConcentration(
+              group.concentration
+            )}
+          </td>
+
+          <td>
+            ${group.time}분
+          </td>
+
+          <td>
+            ${group.n}
+          </td>
+
+          <td>
+            ${group.average.toFixed(2)}%
+          </td>
+
+          <td>
+            ${group.sd.toFixed(2)}
+          </td>
+
+        `;
+
+
+        body
+          .appendChild(
+            row
           );
 
-
-      row.innerHTML = `
-
-        <td>
-          ${formatConcentration(
-            group.concentration
-          )}
-        </td>
-
-        <td>
-          ${group.time}분
-        </td>
-
-        <td>
-          ${group.n}
-        </td>
-
-        <td>
-          ${group.average.toFixed(2)}%
-        </td>
-
-        <td>
-          ${group.sd.toFixed(2)}
-        </td>
-
-      `;
-
-
-      body
-        .appendChild(
-          row
-        );
-
-    }
-  );
+      }
+    );
 
 }
 
 
 /* =====================================================
-   그래프
+   CHART
 ===================================================== */
 
 function createExperimentChart(
@@ -1658,10 +2360,11 @@ function createExperimentChart(
     [
       ...new Set(
 
-        groups.map(
-          g =>
-            g.concentration
-        )
+        groups
+          .map(
+            group =>
+              group.concentration
+          )
 
       )
     ];
@@ -1669,68 +2372,70 @@ function createExperimentChart(
 
   const datasets =
 
-    concentrations.map(
-      concentration => {
+    concentrations
+      .map(
+        concentration => {
 
-        const data =
+          const data =
 
-          groups
+            groups
 
-            .filter(
+              .filter(
+                group =>
+                  group.concentration ===
+                  concentration
+              )
 
-              g =>
-                g.concentration ===
+              .sort(
+                (
+                  a,
+                  b
+                ) =>
+                  a.time -
+                  b.time
+              )
+
+              .map(
+                group => ({
+
+                  x:
+                    group.time,
+
+                  y:
+                    group.average
+
+                })
+              );
+
+
+          return {
+
+            label:
+              formatConcentration(
                 concentration
+              ),
 
-            )
+            data,
 
-            .sort(
+            borderWidth:
+              2,
 
-              (
-                a,
-                b
-              ) =>
+            pointRadius:
+              5,
 
-                a.time -
-                b.time
+            pointHoverRadius:
+              7,
 
-            )
+            tension:
+              0.25,
 
-            .map(
-              g => ({
+            fill:
+              false
 
-                x:
-                  g.time,
+          };
 
-                y:
-                  g.average
-
-              })
-            );
-
-
-        return {
-
-          label:
-            formatConcentration(
-              concentration
-            ),
-
-          data,
-
-          borderWidth:
-            2,
-
-          pointRadius:
-            5,
-
-          tension:
-            0.25
-
-        };
-
-      }
-    );
+        }
+      );
 
 
   if (
@@ -1768,6 +2473,20 @@ function createExperimentChart(
           maintainAspectRatio:
             false,
 
+          plugins: {
+
+            title: {
+
+              display:
+                true,
+
+              text:
+                "시간 및 효모 농도에 따른 평균 표면 부착률"
+
+            }
+
+          },
+
           scales: {
 
             x: {
@@ -1781,7 +2500,7 @@ function createExperimentChart(
                   true,
 
                 text:
-                  "시간 (분)"
+                  "접촉 시간 (분)"
 
               }
 
@@ -1819,7 +2538,7 @@ function createExperimentChart(
 
 
 /* =====================================================
-   회귀 모델
+   REGRESSION
 ===================================================== */
 
 function fitRegressionModel(
@@ -1844,133 +2563,154 @@ function fitRegressionModel(
     [];
 
 
-  groups.forEach(
-    group => {
+  groups
+    .forEach(
+      group => {
 
-      const logC =
+        const logC =
 
-        Math.log10(
-          group.concentration
+          Math.log10(
+            group.concentration
+          );
+
+
+        X.push([
+
+          1,
+
+          group.time,
+
+          logC,
+
+          group.time *
+          logC
+
+        ]);
+
+
+        Y.push(
+          group.average
         );
 
-
-      X.push([
-
-        1,
-
-        group.time,
-
-        logC,
-
-        group.time *
-        logC
-
-      ]);
+      }
+    );
 
 
-      Y.push(
-        group.average
+  try {
+
+    const Xt =
+      transpose(
+        X
       );
 
-    }
-  );
+
+    const XtX =
+      multiplyMatrices(
+        Xt,
+        X
+      );
 
 
-  const Xt =
-    transpose(
-      X
-    );
-
-
-  const XtX =
-    multiplyMatrices(
-      Xt,
-      X
-    );
-
-
-  for (
-    let i = 0;
-    i < XtX.length;
-    i++
-  ) {
-
-    XtX[i][i] +=
+    const lambda =
       1e-8;
+
+
+    for (
+      let i = 0;
+      i < XtX.length;
+      i++
+    ) {
+
+      XtX[i][i] +=
+        lambda;
+
+    }
+
+
+    const inverse =
+      invertMatrix(
+        XtX
+      );
+
+
+    if (
+      !inverse
+    ) {
+
+      return null;
+
+    }
+
+
+    const XtY =
+      multiplyMatrixVector(
+        Xt,
+        Y
+      );
+
+
+    const beta =
+      multiplyMatrixVector(
+        inverse,
+        XtY
+      );
+
+
+    return {
+
+      beta,
+
+      minTime:
+        Math.min(
+          ...groups
+            .map(
+              group =>
+                group.time
+            )
+        ),
+
+      maxTime:
+        Math.max(
+          ...groups
+            .map(
+              group =>
+                group.time
+            )
+        ),
+
+      minConcentration:
+        Math.min(
+          ...groups
+            .map(
+              group =>
+                group.concentration
+            )
+        ),
+
+      maxConcentration:
+        Math.max(
+          ...groups
+            .map(
+              group =>
+                group.concentration
+            )
+        )
+
+    };
 
   }
 
-
-  const inverse =
-    invertMatrix(
-      XtX
-    );
-
-
-  if (
-    !inverse
-  ) {
+  catch {
 
     return null;
 
   }
 
-
-  const XtY =
-    multiplyMatrixVector(
-      Xt,
-      Y
-    );
-
-
-  const beta =
-    multiplyMatrixVector(
-      inverse,
-      XtY
-    );
-
-
-  return {
-
-    beta,
-
-    minTime:
-      Math.min(
-        ...groups.map(
-          g => g.time
-        )
-      ),
-
-    maxTime:
-      Math.max(
-        ...groups.map(
-          g => g.time
-        )
-      ),
-
-    minConcentration:
-      Math.min(
-        ...groups.map(
-          g =>
-            g.concentration
-        )
-      ),
-
-    maxConcentration:
-      Math.max(
-        ...groups.map(
-          g =>
-            g.concentration
-        )
-      )
-
-  };
-
 }
 
 
 /* =====================================================
-   예측
+   PREDICTION
 ===================================================== */
 
 function predictCoverage() {
@@ -1992,7 +2732,7 @@ function predictCoverage() {
   ) {
 
     alert(
-      "예측을 위한 데이터가 부족합니다."
+      "예측을 위한 데이터가 부족합니다. 서로 다른 시간과 농도 조건의 데이터를 더 입력해주세요."
     );
 
     return;
@@ -2037,6 +2777,31 @@ function predictCoverage() {
         .value
 
     );
+
+
+  if (
+    !Number.isFinite(
+      time
+    ) ||
+    time <
+    0 ||
+    !Number.isFinite(
+      coefficient
+    ) ||
+    coefficient <=
+    0 ||
+    !Number.isFinite(
+      exponent
+    )
+  ) {
+
+    alert(
+      "예측 시간과 농도를 올바르게 입력해주세요."
+    );
+
+    return;
+
+  }
 
 
   const concentration =
@@ -2115,7 +2880,7 @@ function predictCoverage() {
 
     explanation +=
 
-      " 입력 조건이 기존 실험 범위를 벗어나 있으므로 외삽 예측이며 불확실성이 큽니다.";
+      " 입력 조건이 기존 실험 데이터 범위를 벗어난 외삽 예측이므로 불확실성이 큽니다.";
 
   }
 
@@ -2147,7 +2912,6 @@ function predictCoverage() {
       "predictionExplanation"
     )
     .textContent =
-
     explanation;
 
 
@@ -2164,7 +2928,7 @@ function predictCoverage() {
 
 
 /* =====================================================
-   모델 설명
+   MODEL DESCRIPTION
 ===================================================== */
 
 function renderModelDescription(
@@ -2185,7 +2949,7 @@ function renderModelDescription(
 
     element.textContent =
 
-      "현재 데이터만으로 안정적인 예측식을 만들기 어렵습니다. 서로 다른 시간과 농도 조건의 데이터를 더 입력해주세요.";
+      "현재 데이터만으로는 안정적인 예측식을 만들기 어렵습니다. 서로 다른 시간과 농도 조건의 데이터를 더 입력해주세요.";
 
 
     return;
@@ -2213,6 +2977,10 @@ function renderModelDescription(
 
     </strong>
 
+    <br><br>
+
+    마지막 항은 시간과 농도의 상호작용을 의미합니다.
+
   `;
 
 }
@@ -2229,9 +2997,10 @@ function signed(
 
     return (
       "+ " +
-      value.toFixed(
-        4
-      )
+      value
+        .toFixed(
+          4
+        )
     );
 
   }
@@ -2241,16 +3010,17 @@ function signed(
     "- " +
     Math.abs(
       value
-    ).toFixed(
-      4
     )
+      .toFixed(
+        4
+      )
   );
 
 }
 
 
 /* =====================================================
-   CSV
+   CSV DOWNLOAD
 ===================================================== */
 
 function downloadCSV() {
@@ -2261,7 +3031,7 @@ function downloadCSV() {
   ) {
 
     alert(
-      "저장할 데이터가 없습니다."
+      "저장할 실험 데이터가 없습니다."
     );
 
     return;
@@ -2274,26 +3044,25 @@ function downloadCSV() {
     "\uFEFF번호,시간(분),농도(cells/mL),표면부착률(%)\n";
 
 
-  experiments.forEach(
+  experiments
+    .forEach(
+      (
+        experiment,
+        index
+      ) => {
 
-    (
-      experiment,
-      index
-    ) => {
+        csv +=
 
-      csv +=
+          `${index + 1},` +
 
-        `${index + 1},` +
+          `${experiment.time},` +
 
-        `${experiment.time},` +
+          `${experiment.concentration},` +
 
-        `${experiment.concentration},` +
+          `${experiment.coverage}\n`;
 
-        `${experiment.coverage}\n`;
-
-    }
-
-  );
+      }
+    );
 
 
   const blob =
@@ -2321,9 +3090,10 @@ function downloadCSV() {
 
   const link =
 
-    document.createElement(
-      "a"
-    );
+    document
+      .createElement(
+        "a"
+      );
 
 
   link.href =
@@ -2331,38 +3101,53 @@ function downloadCSV() {
 
 
   link.download =
-
     "yeast_attachment_data.csv";
+
+
+  document
+    .body
+    .appendChild(
+      link
+    );
 
 
   link.click();
 
 
-  URL.revokeObjectURL(
-    url
-  );
+  link.remove();
+
+
+  URL
+    .revokeObjectURL(
+      url
+    );
 
 }
 
 
 /* =====================================================
-   행렬 함수
+   MATRIX FUNCTIONS
 ===================================================== */
 
 function transpose(
   matrix
 ) {
 
-  return matrix[0].map(
+  return matrix[0]
+    .map(
 
-    (_, column) =>
+      (
+        _,
+        column
+      ) =>
 
-      matrix.map(
-        row =>
-          row[column]
-      )
+        matrix
+          .map(
+            row =>
+              row[column]
+          )
 
-  );
+    );
 
 }
 
@@ -2372,15 +3157,56 @@ function multiplyMatrices(
   B
 ) {
 
-  return A.map(
+  return A
+    .map(
 
-    row =>
+      row =>
 
-      B[0].map(
+        B[0]
+          .map(
 
-        (_, column) =>
+            (
+              _,
+              column
+            ) =>
 
-          row.reduce(
+              row
+                .reduce(
+
+                  (
+                    sum,
+                    value,
+                    index
+                  ) =>
+
+                    sum +
+
+                    value *
+                    B[index][column],
+
+                  0
+
+                )
+
+          )
+
+    );
+
+}
+
+
+function multiplyMatrixVector(
+  matrix,
+  vector
+) {
+
+  return matrix
+    .map(
+
+      row =>
+
+        row
+          .reduce(
 
             (
               sum,
@@ -2391,46 +3217,13 @@ function multiplyMatrices(
               sum +
 
               value *
-              B[index][column],
+              vector[index],
 
             0
 
           )
 
-      )
-
-  );
-
-}
-
-
-function multiplyMatrixVector(
-  matrix,
-  vector
-) {
-
-  return matrix.map(
-
-    row =>
-
-      row.reduce(
-
-        (
-          sum,
-          value,
-          index
-        ) =>
-
-          sum +
-
-          value *
-          vector[index],
-
-        0
-
-      )
-
-  );
+    );
 
 }
 
@@ -2445,36 +3238,43 @@ function invertMatrix(
 
   const augmented =
 
-    matrix.map(
+    matrix
+      .map(
 
-      (
-        row,
-        i
-      ) => [
+        (
+          row,
+          i
+        ) => [
 
-        ...row,
+          ...row,
 
-        ...Array.from(
+          ...Array
+            .from(
 
-          {
-            length:
-              n
-          },
+              {
+                length:
+                  n
+              },
 
-          (
-            _,
-            j
-          ) =>
+              (
+                _,
+                j
+              ) =>
 
-            i === j
-              ? 1
-              : 0
+                i ===
+                j
 
-        )
+                  ?
+                  1
 
-      ]
+                  :
+                  0
 
-    );
+            )
+
+        ]
+
+      );
 
 
   for (
@@ -2599,20 +3399,22 @@ function invertMatrix(
   }
 
 
-  return augmented.map(
+  return augmented
+    .map(
 
-    row =>
-      row.slice(
-        n
-      )
+      row =>
+        row
+          .slice(
+            n
+          )
 
-  );
+    );
 
 }
 
 
 /* =====================================================
-   시작
+   START
 ===================================================== */
 
 loadExperiments();
