@@ -2,37 +2,27 @@
   box-sizing: border-box;
 }
 
-
 :root {
-
-  --background: #e4e7ec;
-
+  --background: #e3e6ea;
   --card: #ffffff;
 
   --text: #172033;
-
   --soft-text: #687384;
 
   --primary: #17365d;
-
   --primary-light: #245a92;
 
   --accent: #2f9c95;
 
-  --border: #cdd5df;
-
-  --light: #f1f4f7;
-
+  --border: #cad2db;
+  --light: #f0f2f4;
 }
-
 
 html {
   scroll-behavior: smooth;
 }
 
-
 body {
-
   margin: 0;
 
   font-family:
@@ -44,20 +34,20 @@ body {
     Arial,
     sans-serif;
 
-  background:
-    var(--background);
+  background: var(--background);
 
-  color:
-    var(--text);
-
+  color: var(--text);
 }
 
 
-/* ================================
+/* =========================================
    HEADER
-================================ */
+========================================= */
 
 header {
+  position: relative;
+
+  overflow: hidden;
 
   background:
     linear-gradient(
@@ -71,41 +61,70 @@ header {
 
   padding:
     70px 20px 95px;
-
 }
 
+header::before {
+  content: "";
+
+  position: absolute;
+
+  width: 280px;
+  height: 280px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(255,255,255,0.05);
+
+  top: -120px;
+  right: -60px;
+}
+
+header::after {
+  content: "";
+
+  position: absolute;
+
+  width: 180px;
+  height: 180px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(47,156,149,0.16);
+
+  bottom: -90px;
+  left: 4%;
+}
 
 .header-content {
+  position: relative;
+
+  z-index: 2;
 
   max-width: 1080px;
 
   margin: auto;
-
 }
 
-
 header h1 {
-
   margin:
     8px 0 14px;
 
   font-size:
     44px;
 
+  letter-spacing:
+    -1px;
 }
-
 
 header p {
-
   margin: 0;
 
-  opacity: 0.82;
-
+  opacity: 0.84;
 }
 
-
 .eyebrow {
-
   display:
     inline-block;
 
@@ -118,21 +137,22 @@ header p {
   background:
     rgba(255,255,255,0.1);
 
+  border:
+    1px solid rgba(255,255,255,0.15);
+
   font-size:
     11px;
 
   letter-spacing:
     2px;
-
 }
 
 
-/* ================================
+/* =========================================
    MAIN
-================================ */
+========================================= */
 
 main {
-
   max-width:
     1080px;
 
@@ -142,20 +162,22 @@ main {
   padding:
     0 20px;
 
+  position: relative;
+
+  z-index: 3;
 }
 
 
-/* ================================
+/* =========================================
    CARD
-================================ */
+========================================= */
 
 .card {
-
   background:
     white;
 
   border:
-    1px solid #d1d7de;
+    1px solid #d0d6dd;
 
   border-radius:
     20px;
@@ -168,55 +190,58 @@ main {
 
   box-shadow:
     0 12px 28px
-    rgba(20,40,70,0.10);
-
+    rgba(20,40,70,0.11);
 }
 
 
-/* ================================
-   SECTION
-================================ */
+/* =========================================
+   SECTION TITLE
+========================================= */
 
 .section-title {
-
-  display: flex;
+  display:
+    flex;
 
   gap:
     16px;
 
+  align-items:
+    flex-start;
+
   margin-bottom:
     28px;
-
 }
 
-
 .section-title h2 {
-
   margin:
     0 0 6px;
 
+  font-size:
+    22px;
 }
 
-
 .section-title p {
-
   margin: 0;
 
   color:
     var(--soft-text);
 
+  font-size:
+    14px;
+
+  line-height:
+    1.6;
 }
 
-
 .step {
-
   min-width:
     46px;
 
   height:
     46px;
 
-  display: flex;
+  display:
+    flex;
 
   justify-content:
     center;
@@ -240,15 +265,17 @@ main {
   font-weight:
     bold;
 
+  box-shadow:
+    0 7px 16px
+    rgba(23,54,93,0.22);
 }
 
 
-/* ================================
+/* =========================================
    UPLOAD
-================================ */
+========================================= */
 
 .upload-box {
-
   min-height:
     150px;
 
@@ -271,58 +298,50 @@ main {
     16px;
 
   background:
-    #eff3f6;
+    #edf1f4;
 
   cursor:
     pointer;
 
+  transition:
+    0.2s;
 }
-
 
 .upload-box:hover {
-
   background:
-    #e8f3f2;
+    #e7f1f0;
 
+  border-color:
+    var(--accent);
 }
-
 
 .upload-box input {
-
   display:
     none;
-
 }
 
-
 .upload-box strong {
-
   color:
     var(--primary);
 
   margin-bottom:
     8px;
-
 }
 
-
 .upload-box span {
-
   color:
     var(--soft-text);
 
   font-size:
     13px;
-
 }
 
 
-/* ================================
+/* =========================================
    IMAGE
-================================ */
+========================================= */
 
 .image-area {
-
   display:
     grid;
 
@@ -334,51 +353,45 @@ main {
 
   margin-top:
     28px;
-
 }
 
-
 .image-panel {
-
   background:
-    #eef1f4;
+    #edf0f3;
 
   border:
-    1px solid #ccd3db;
+    1px solid #c9d0d8;
 
   border-radius:
     14px;
 
   padding:
     16px;
-
 }
 
-
 .image-panel h3 {
-
   margin:
     0;
 
   color:
     var(--primary);
 
+  font-size:
+    15px;
 }
 
-
 .canvas-guide {
-
   color:
     #6d7782;
 
   font-size:
     12px;
 
+  line-height:
+    1.5;
 }
 
-
 .image-panel canvas {
-
   display:
     block;
 
@@ -397,15 +410,16 @@ main {
   cursor:
     crosshair;
 
+  touch-action:
+    none;
 }
 
 
-/* ================================
+/* =========================================
    CONTROLS
-================================ */
+========================================= */
 
 .control-box {
-
   margin-top:
     22px;
 
@@ -413,74 +427,67 @@ main {
     22px;
 
   background:
-    #eef1f4;
+    #eceff2;
 
   border:
-    1px solid #cad2da;
+    1px solid #c6ced7;
 
   border-radius:
     14px;
-
 }
 
-
 .control-header {
-
   display:
     flex;
 
   justify-content:
     space-between;
+
+  align-items:
+    center;
 
   margin-bottom:
     20px;
-
 }
 
+.control-header strong {
+  color:
+    var(--primary);
+}
 
 .slider-row {
-
   margin:
     18px 0;
-
 }
 
-
 .slider-info {
-
   display:
     flex;
 
   justify-content:
     space-between;
 
+  align-items:
+    center;
+
   margin-bottom:
     8px;
-
 }
-
 
 .slider-info strong {
-
   color:
     var(--primary);
-
 }
 
-
 input[type="range"] {
-
   width:
     100%;
 
   accent-color:
     var(--accent);
-
 }
 
-
 .value-badge {
-
   background:
     var(--primary);
 
@@ -493,11 +500,11 @@ input[type="range"] {
   border-radius:
     8px;
 
+  font-size:
+    12px;
 }
 
-
 .check-option {
-
   display:
     flex;
 
@@ -505,30 +512,56 @@ input[type="range"] {
     center;
 
   gap:
-    8px;
+    9px;
 
   margin-top:
     16px;
 
+  padding:
+    12px 13px;
+
+  background:
+    white;
+
+  border:
+    1px solid #c4cdd6;
+
+  border-radius:
+    9px;
+
+  font-size:
+    13px;
+
+  cursor:
+    pointer;
 }
 
+.check-option input {
+  width:
+    17px;
+
+  height:
+    17px;
+
+  accent-color:
+    var(--accent);
+}
 
 .roi-explanation {
-
   display:
     flex;
 
   gap:
     20px;
 
+  flex-wrap:
+    wrap;
+
   margin-top:
     18px;
-
 }
 
-
 .legend-item {
-
   display:
     flex;
 
@@ -540,12 +573,9 @@ input[type="range"] {
 
   font-size:
     12px;
-
 }
 
-
 .legend-circle {
-
   width:
     14px;
 
@@ -554,28 +584,50 @@ input[type="range"] {
 
   border-radius:
     50%;
-
 }
-
 
 .legend-circle.outer {
-
   border:
-    3px solid #e85151;
-
+    3px solid #ff4d5d;
 }
-
 
 .legend-circle.inner {
-
   border:
-    3px solid #38a89e;
-
+    3px solid #23bfa9;
 }
 
+.center-info {
+  margin-top:
+    16px;
+
+  padding:
+    11px 13px;
+
+  background:
+    white;
+
+  border:
+    1px solid #c6ced7;
+
+  border-radius:
+    9px;
+
+  font-size:
+    12px;
+
+  color:
+    #667281;
+}
+
+.center-info strong {
+  color:
+    var(--primary);
+
+  margin-left:
+    5px;
+}
 
 .helper {
-
   color:
     #687384;
 
@@ -584,16 +636,14 @@ input[type="range"] {
 
   line-height:
     1.6;
-
 }
 
 
-/* ================================
+/* =========================================
    COVERAGE
-================================ */
+========================================= */
 
 .coverage-result {
-
   margin-top:
     24px;
 
@@ -617,22 +667,23 @@ input[type="range"] {
   border-radius:
     16px;
 
+  box-shadow:
+    0 12px 25px
+    rgba(23,54,93,0.18);
 }
 
-
 .coverage-result span {
-
   display:
     block;
 
   opacity:
     0.75;
 
+  font-size:
+    13px;
 }
 
-
 .coverage-result strong {
-
   display:
     block;
 
@@ -641,16 +692,19 @@ input[type="range"] {
 
   font-size:
     48px;
+}
 
+.coverage-result small {
+  opacity:
+    0.7;
 }
 
 
-/* ================================
-   INPUT
-================================ */
+/* =========================================
+   INPUTS
+========================================= */
 
 .input-grid {
-
   display:
     grid;
 
@@ -662,29 +716,23 @@ input[type="range"] {
 
   margin-bottom:
     22px;
-
 }
 
-
 .input-grid > label {
-
   padding:
     18px;
 
   background:
-    #f0f2f5;
+    #eef1f4;
 
   border:
-    1px solid #cad2da;
+    1px solid #c6ced6;
 
   border-radius:
     14px;
-
 }
 
-
 .input-grid > label > span {
-
   display:
     block;
 
@@ -696,12 +744,9 @@ input[type="range"] {
 
   font-weight:
     bold;
-
 }
 
-
 input[type="number"] {
-
   width:
     100%;
 
@@ -714,12 +759,24 @@ input[type="number"] {
   border-radius:
     9px;
 
+  background:
+    white;
+
+  outline:
+    none;
 }
 
+input[type="number"]:focus {
+  border-color:
+    var(--accent);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(47,156,149,0.13);
+}
 
 .input-with-unit,
 .scientific-input {
-
   display:
     flex;
 
@@ -728,32 +785,29 @@ input[type="number"] {
 
   gap:
     8px;
-
 }
 
+.input-with-unit input {
+  flex:
+    1;
+}
 
 .scientific-input input {
-
   width:
     110px;
-
 }
-
 
 .scientific-input .exponent {
-
   width:
     60px;
-
 }
 
 
-/* ================================
-   BUTTON
-================================ */
+/* =========================================
+   BUTTONS
+========================================= */
 
 button {
-
   border:
     none;
 
@@ -766,11 +820,22 @@ button {
   cursor:
     pointer;
 
+  font-weight:
+    700;
+
+  transition:
+    0.2s;
 }
 
+button:hover {
+  transform:
+    translateY(-1px);
+
+  opacity:
+    0.92;
+}
 
 .primary-button {
-
   width:
     100%;
 
@@ -784,14 +849,12 @@ button {
       #23618d
     );
 
-  font-weight:
-    bold;
-
+  box-shadow:
+    0 8px 18px
+    rgba(23,54,93,0.18);
 }
 
-
 .secondary-button {
-
   background:
     white;
 
@@ -800,66 +863,61 @@ button {
 
   color:
     var(--primary);
-
 }
 
-
 .delete-button {
-
   background:
     #ffecec;
 
   color:
     #a23636;
 
+  padding:
+    8px 11px;
 }
 
 
-/* ================================
+/* =========================================
    TABLE
-================================ */
+========================================= */
 
 .table-wrapper {
-
   overflow-x:
     auto;
 
   border:
-    1px solid #ccd3db;
+    1px solid #c8d0d8;
 
   border-radius:
     12px;
 
+  background:
+    white;
 }
 
-
 table {
-
   width:
     100%;
 
   border-collapse:
     collapse;
-
 }
 
-
 th {
-
   padding:
     14px;
 
   background:
-    #e8edf2;
+    #e6ebf0;
 
   color:
     var(--primary);
 
+  font-size:
+    13px;
 }
 
-
 td {
-
   padding:
     14px;
 
@@ -869,29 +927,35 @@ td {
   border-bottom:
     1px solid #e2e6ea;
 
+  background:
+    white;
+
+  font-size:
+    14px;
 }
 
+tbody tr:hover td {
+  background:
+    #f2f4f6;
+}
 
 .empty-row td {
-
   padding:
     35px;
 
   background:
-    #f3f5f7;
+    #f1f3f5;
 
   color:
     #808a94;
-
 }
 
 
-/* ================================
+/* =========================================
    CHART
-================================ */
+========================================= */
 
 .chart-container {
-
   height:
     430px;
 
@@ -905,20 +969,26 @@ td {
     20px;
 
   border:
-    1px solid #ccd3db;
+    1px solid #c8d0d8;
 
   border-radius:
     14px;
+}
 
+.subheading {
+  margin-top:
+    30px;
+
+  color:
+    var(--primary);
 }
 
 
-/* ================================
+/* =========================================
    MODEL
-================================ */
+========================================= */
 
 .model-info {
-
   margin-top:
     24px;
 
@@ -926,16 +996,34 @@ td {
     20px;
 
   background:
-    #edf1f4;
+    #eceff2;
+
+  border:
+    1px solid #c5ced7;
 
   border-radius:
     12px;
+}
 
+.model-info h3 {
+  margin-top:
+    0;
+
+  color:
+    var(--primary);
+}
+
+.model-info p {
+  line-height:
+    1.7;
 }
 
 
-.prediction-result {
+/* =========================================
+   PREDICTION
+========================================= */
 
+.prediction-result {
   margin-top:
     25px;
 
@@ -958,12 +1046,9 @@ td {
 
   border-radius:
     16px;
-
 }
 
-
 .prediction-result strong {
-
   display:
     block;
 
@@ -972,12 +1057,23 @@ td {
 
   margin:
     8px;
-
 }
 
+.prediction-result p {
+  max-width:
+    700px;
+
+  margin:
+    12px auto 0;
+
+  line-height:
+    1.7;
+
+  font-size:
+    13px;
+}
 
 .warning-box {
-
   margin-top:
     20px;
 
@@ -996,11 +1092,16 @@ td {
   font-size:
     12px;
 
+  line-height:
+    1.6;
 }
 
 
-.button-row {
+/* =========================================
+   BUTTON ROW
+========================================= */
 
+.button-row {
   display:
     flex;
 
@@ -1009,20 +1110,14 @@ td {
 
   margin-top:
     20px;
-
 }
 
 
-.hidden {
-
-  display:
-    none !important;
-
-}
-
+/* =========================================
+   FOOTER
+========================================= */
 
 footer {
-
   padding:
     40px;
 
@@ -1031,56 +1126,77 @@ footer {
 
   color:
     #707b85;
-
 }
 
-
 footer span {
-
   display:
     block;
 
   margin-top:
     5px;
-
 }
 
 
-/* ================================
+/* =========================================
+   UTILITY
+========================================= */
+
+.hidden {
+  display:
+    none !important;
+}
+
+
+/* =========================================
    MOBILE
-================================ */
+========================================= */
 
 @media(max-width:720px) {
 
   .image-area {
-
     grid-template-columns:
       1fr;
-
   }
-
 
   .input-grid {
-
     grid-template-columns:
       1fr;
-
   }
 
+  header {
+    padding:
+      55px 20px 75px;
+  }
 
   header h1 {
-
     font-size:
       30px;
-
   }
 
-
   .card {
-
     padding:
       20px;
+  }
 
+  .coverage-result strong,
+  .prediction-result strong {
+    font-size:
+      38px;
+  }
+
+  .button-row {
+    flex-direction:
+      column;
+  }
+
+  .button-row button {
+    width:
+      100%;
+  }
+
+  .scientific-input {
+    flex-wrap:
+      wrap;
   }
 
 }
